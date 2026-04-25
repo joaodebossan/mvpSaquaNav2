@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>SaquaNav</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #e8e8e8; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 390px;
+      height: 100vh;
+      max-height: 844px;
+      background: #fff;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      background: #0b1b2b;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .navbar-logo { color: #fff; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+    .navbar-logo span { color: #4da6ff; }
+    .navbar-btns { display: flex; gap: 8px; }
+    .nav-btn {
+      background: #fff;
+      color: #0b1b2b;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── MAPA ── */
+    .map-area {
+      flex: 1;
+      position: relative;
+      background: #b0d8f0;
+      overflow: hidden;
+    }
+    .map-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .marker {
+      position: absolute;
+      font-size: 26px;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+      transition: transform 0.15s;
+      user-select: none;
+    }
+    .marker:active { transform: translate(-50%,-50%) scale(1.2); }
+
+    /* ── POPUP ── */
+    .popup {
+      position: absolute;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      width: 200px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      font-size: 12px;
+      z-index: 10;
+      display: none;
+    }
+    .popup.active { display: block; }
+    .popup-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; color: #0b1b2b; }
+    .popup-addr { color: #888; font-size: 10px; margin-bottom: 8px; }
+    .popup-img {
+      width: 100%; height: 80px;
+      background: #eee;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #bbb; font-size: 11px;
+    }
+    .popup-desc { color: #555; font-size: 11px; margin-bottom: 4px; }
+    .popup-time { color: #aaa; font-size: 10px; }
+    .popup-close {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none;
+      font-size: 18px; color: #aaa; cursor: pointer;
+    }
+
+    /* ── FAB ── */
+    .fab {
+      position: absolute;
+      bottom: 20px; right: 16px;
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: #0b1b2b;
+      color: #fff;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      z-index: 5;
+    }
+
+    /* ── ZOOM ── */
+    .zoom-btns {
+      position: absolute; top: 12px; left: 10px;
+      display: flex; flex-direction: column; gap: 2px; z-index: 5;
+    }
+    .zoom-btn {
+      width: 32px; height: 32px;
+      background: #fff;
+      border: 0.5px solid #ccc;
+      border-radius: 6px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #333;
+    }
+
+    /* ── BOTTOM BAR ── */
+    .bottom-bar {
+      background: #fff;
+      border-top: 0.5px solid #ddd;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 14px;
+      flex-shrink: 0;
+    }
+    .tab-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; padding: 4px 14px; border-radius: 10px;
+    }
+    .tab-icon { font-size: 22px; }
+    .tab-label { font-size: 10px; color: #aaa; }
+    .tab-item.active .tab-label { color: #0b1b2b; font-weight: 700; }
+
+    /* ── MODAL (Novo Pin) ── */
+    .modal-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none; align-items: flex-end;
+      z-index: 20;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-sheet {
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      padding: 16px 16px 24px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 40px; height: 4px;
+      background: #ddd; border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: #0b1b2b; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 11px; color: #888; margin-bottom: 5px; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-select, .form-input, .form-textarea {
+      width: 100%;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #0b1b2b;
+      background: #fff;
+      outline: none;
+      appearance: none;
+    }
+    .form-textarea { height: 70px; resize: none; }
+    .camera-btn {
+      width: 100%;
+      border: 1.5px dashed #ccc;
+      border-radius: 10px;
+      padding: 14px;
+      background: #fafafa;
+      color: #777;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary {
+      width: 100%;
+      background: #0b1b2b;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn-secondary {
+      width: 100%;
+      background: #f0f0f0;
+      color: #555;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* ── PAINEL DE FILTROS ── */
+    .filter-panel {
+      position: absolute; inset: 0;
+      background: #fff;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      padding: 16px;
+    }
+    .filter-panel.active { display: flex; }
+    .filter-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .filter-title { font-size: 16px; font-weight: 700; color: #0b1b2b; }
+    .close-btn { background: none; border: none; font-size: 22px; color: #aaa; cursor: pointer; }
+    .filter-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 0.5px solid #f0f0f0;
+    }
+    .filter-left { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #0b1b2b; }
+    .toggle {
+      width: 42px; height: 24px;
+      background: #0b1b2b;
+      border-radius: 12px;
+      position: relative; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px; right: 3px;
+      transition: right 0.2s;
+    }
+    .toggle.off { background: #ddd; }
+    .toggle.off::after { right: 21px; }
+
+    /* ── SVG DO MAPA ── */
+    .road-main { stroke: #f5c842; stroke-width: 9; fill: none; }
+    .road { stroke: #e8d87f; stroke-width: 5; fill: none; }
+    .land { fill: #e8f0d8; }
+    .block { fill: #d8cfb8; }
+    .beach { fill: #f0e0b0; }
+  </style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="navbar-logo">Saqua<span>Nav</span></div>
+    <div class="navbar-btns">
+      <button class="nav-btn" onclick="centerMap()">📍 Localização</button>
+      <button class="nav-btn" onclick="showFilters()">Filtros</button>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div class="map-area" id="mapArea" onclick="handleMapClick(event)">
+    <svg class="map-bg" viewBox="0 0 390 600" xmlns="http://www.w3.org/2000/svg">
+      <rect width="390" height="600" fill="#b0d8f0"/>
+      <path d="M0,250 Q100,230 200,245 Q280,258 390,235 L390,600 L0,600 Z" class="land"/>
+      <path d="M0,370 Q100,355 200,365 Q280,375 390,355 L390,600 L0,600 Z" fill="#f0e0b0" opacity="0.5"/>
+      <line x1="0" y1="278" x2="390" y2="255" class="road-main" stroke="#f5c842" stroke-width="9" fill="none"/>
+      <line x1="0" y1="320" x2="390" y2="305" class="road" stroke="#e8d87f" stroke-width="5" fill="none"/>
+      <line x1="100" y1="248" x2="110" y2="380" class="road" stroke="#e8d87f" stroke-width="5" fill="none"/>
+      <line x1="190" y1="243" x2="200" y2="380" class="road" stroke="#e8d87f" stroke-width="5" fill="none"/>
+      <line x1="280" y1="238" x2="290" y2="370" class="road" stroke="#e8d87f" stroke-width="5" fill="none"/>
+      <rect x="30" y="252" width="65" height="34" rx="3" class="block"/>
+      <rect x="110" y="248" width="70" height="32" rx="3" class="block"/>
+      <rect x="200" y="244" width="75" height="32" rx="3" class="block"/>
+      <rect x="290" y="240" width="90" height="32" rx="3" class="block"/>
+      <rect x="30" y="325" width="65" height="28" rx="3" class="block"/>
+      <rect x="110" y="325" width="70" height="28" rx="3" class="block"/>
+      <rect x="200" y="320" width="75" height="28" rx="3" class="block"/>
+      <rect x="290" y="315" width="90" height="28" rx="3" class="block"/>
+      <ellipse cx="195" cy="430" rx="40" ry="24" fill="#5ab87a" opacity="0.4"/>
+      <text x="100" y="398" font-size="10" fill="#888">Praia de Itaúna</text>
+      <text x="28" y="270" font-size="8" fill="#333" font-weight="bold">RJ-102</text>
+      <text x="210" y="260" font-size="8" fill="#333" font-weight="bold">Av. Oceânica</text>
+    </svg>
+
+    <div class="zoom-btns">
+      <button class="zoom-btn">+</button>
+      <button class="zoom-btn">−</button>
+    </div>
+
+    <!-- MARCADORES -->
+    <div class="marker" style="left:30%;top:47%" onclick="showPopup('transito',event)">🚗</div>
+    <div class="marker" style="left:52%;top:44%" onclick="showPopup('incidente',event)">⚠️</div>
+    <div class="marker" style="left:68%;top:42%" onclick="showPopup('obras',event)">🚧</div>
+    <div class="marker" style="left:20%;top:55%" onclick="showPopup('evento',event)">🎉</div>
+    <div class="marker" style="left:82%;top:41%" onclick="showPopup('fav',event)">❤️</div>
+    <div class="marker" id="myLocMarker" style="left:50%;top:50%;display:none">📍</div>
+
+    <!-- POPUPS -->
+    <div class="popup" id="popup-transito" style="left:8%;top:28%">
+      <button class="popup-close" onclick="closePopup('transito')">×</button>
+      <div class="popup-title">🚗 Trânsito</div>
+      <div class="popup-addr">Av. Salgado Filho, 200</div>
+      <div class="popup-desc">Congestionamento na saída da ponte.</div>
+      <div class="popup-time">25/04/2026 • 09:15</div>
+    </div>
+
+    <div class="popup" id="popup-incidente" style="left:28%;top:22%">
+      <button class="popup-close" onclick="closePopup('incidente')">×</button>
+      <div class="popup-title">⚠️ Incidente</div>
+      <div class="popup-addr">Rua dos Mariscos, S/N – Itaúna</div>
+      <div class="popup-img">📷 Buraco na via</div>
+      <div class="popup-desc">Buraco na rua dos Mariscos! CUIDADO!</div>
+      <div class="popup-time">23/03/2026 • 22:12</div>
+    </div>
+
+    <div class="popup" id="popup-obras" style="left:38%;top:24%">
+      <button class="popup-close" onclick="closePopup('obras')">×</button>
+      <div class="popup-title">🚧 Obras</div>
+      <div class="popup-addr">RJ-102, km 4</div>
+      <div class="popup-desc">Obras de recapeamento. Desvio à esquerda.</div>
+      <div class="popup-time">20/04/2026 • 08:00</div>
+    </div>
+
+    <div class="popup" id="popup-evento" style="left:8%;top:34%">
+      <button class="popup-close" onclick="closePopup('evento')">×</button>
+      <div class="popup-title">🎉 Evento</div>
+      <div class="popup-addr">Praia de Saquarema, Arena</div>
+      <div class="popup-desc">Festival de música na praia! Entrada gratuita.</div>
+      <div class="popup-time">26/04/2026 • 16:00</div>
+    </div>
+
+    <div class="popup" id="popup-fav" style="left:48%;top:22%">
+      <button class="popup-close" onclick="closePopup('fav')">×</button>
+      <div class="popup-title">❤️ Favorito</div>
+      <div class="popup-addr">Rua Arlinda Gomes, 45</div>
+      <div class="popup-desc">Casa</div>
+      <div class="popup-time">Adicionado em 01/01/2026</div>
+    </div>
+
+    <!-- BOTÃO + -->
+    <button class="fab" onclick="openModal()">+</button>
+  </div>
+
+  <!-- BARRA INFERIOR -->
+  <div class="bottom-bar">
+    <div class="tab-item active" onclick="setTab(this)">
+      <span class="tab-icon">🗺️</span>
+      <span class="tab-label">Mapa</span>
+    </div>
+    <div class="tab-item" onclick="setTab(this)">
+      <span class="tab-icon">🔔</span>
+      <span class="tab-label">Alertas</span>
+    </div>
+    <div class="tab-item" onclick="setTab(this)">
+      <span class="tab-icon">❤️</span>
+      <span class="tab-label">Favoritos</span>
+    </div>
+    <div class="tab-item" onclick="setTab(this)">
+      <span class="tab-icon">👤</span>
+      <span class="tab-label">Perfil</span>
+    </div>
+  </div>
+
+  <!-- MODAL NOVO PIN -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Novo Pin</div>
+
+      <div class="form-group">
+        <label class="form-label">Tipo de marcador</label>
+        <select class="form-select">
+          <option value="">Selecione...</option>
+          <option>🚗 Trânsito</option>
+          <option>🎉 Evento</option>
+          <option>⚠️ Incidente</option>
+          <option>🚧 Obras</option>
+          <option>❤️ Favorito</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Endereço</label>
+        <input class="form-input" type="text" placeholder="Buscando endereço...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Foto (opcional)</label>
+        <label class="camera-btn" for="fotoInput">
+          📸 Câmera / Galeria
+        </label>
+        <input id="fotoInput" type="file" accept="image/*" capture="environment" style="display:none">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição (opcional)</label>
+        <textarea class="form-textarea" placeholder="Descreva o ocorrido..."></textarea>
+      </div>
+
+      <button class="btn-primary" onclick="closeModal()">Criar Pin</button>
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- PAINEL DE FILTROS -->
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-header">
+      <span class="filter-title">Filtros</span>
+      <button class="close-btn" onclick="hideFilters()">×</button>
+    </div>
+    <div class="filter-item">
+      <div class="filter-left"><span style="font-size:20px">🚗</span> Trânsito</div>
+      <div class="toggle" onclick="toggleFilter(this)"></div>
+    </div>
+    <div class="filter-item">
+      <div class="filter-left"><span style="font-size:20px">🎉</span> Eventos</div>
+      <div class="toggle" onclick="toggleFilter(this)"></div>
+    </div>
+    <div class="filter-item">
+      <div class="filter-left"><span style="font-size:20px">⚠️</span> Incidentes</div>
+      <div class="toggle" onclick="toggleFilter(this)"></div>
+    </div>
+    <div class="filter-item">
+      <div class="filter-left"><span style="font-size:20px">🚧</span> Obras</div>
+      <div class="toggle" onclick="toggleFilter(this)"></div>
+    </div>
+    <div class="filter-item">
+      <div class="filter-left"><span style="font-size:20px">❤️</span> Favoritos</div>
+      <div class="toggle" onclick="toggleFilter(this)"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showPopup(id, e) {
+    e && e.stopPropagation();
+    document.querySelectorAll('.popup').forEach(p => p.classList.remove('active'));
+    document.getElementById('popup-' + id).classList.add('active');
+  }
+  function closePopup(id) {
+    document.getElementById('popup-' + id).classList.remove('active');
+  }
+  function handleMapClick(e) {
+    if (!e.target.classList.contains('marker')) {
+      document.querySelectorAll('.popup').forEach(p => p.classList.remove('active'));
+    }
+  }
+  function openModal() {
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+  }
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  function showFilters() {
+    document.getElementById('filterPanel').classList.add('active');
+  }
+  function hideFilters() {
+    document.getElementById('filterPanel').classList.remove('active');
+  }
+  function toggleFilter(el) {
+    el.classList.toggle('off');
+  }
+  function setTab(el) {
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  function centerMap() {
+    var m = document.getElementById('myLocMarker');
+    m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 3000);
+  }
+</script>
+
+</body>
+</html>
