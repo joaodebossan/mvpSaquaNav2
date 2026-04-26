@@ -441,13 +441,7 @@
 
   <!-- NAVBAR -->
   <div class="navbar">
-    <div class="navbar-top">
-      <div class="logo"><img src="logo.png" alt="SaquaNav"></div>
-      <div class="navbar-btns">
-        <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
-        <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
-      </div>
-    </div>
+    <div class="logo"><img src="logo.png" alt="SaquaNav"></div>
 
     <!-- Barra de busca -->
     <div class="search-wrapper">
@@ -461,6 +455,11 @@
         oninput="buscarEndereco(this.value)"
       >
       <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="navbar-btns">
+      <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
+      <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
     </div>
   </div>
 
@@ -620,7 +619,7 @@
 
   <script>
     // Centro de Saquarema
-    const CENTRO = [-22.928393, -42.491531];
+    const CENTRO = [-22.9370, -42.4980];
 
     // Inicia o mapa
     const mapa = L.map('mapa', {
@@ -899,16 +898,16 @@
       } catch {
         // Dados de exemplo enquanto não tem servidor
         reports = [
-          { id:1,  tipo:'transito', lat:-22.9320, lng:-42.4885, endereco:'RJ-102, sentido Itaúna',                    descricao:'Congestionamento na ponte – devagar',       timestamp: new Date().toISOString() },
-          { id:2,  tipo:'buraco',   lat:-22.9365, lng:-42.4975, endereco:'Av. Salgado Filho (próx. ao Centro)',       descricao:'Buraco enorme na pista!',                  timestamp: new Date().toISOString() },
-          { id:3,  tipo:'obras',    lat:-22.9295, lng:-42.4830, endereco:'RJ-102, km 4 – Porto Novo',                 descricao:'Obras de recapeamento – faixa bloqueada',   timestamp: new Date().toISOString() },
-          { id:4,  tipo:'acidente', lat:-22.9348, lng:-42.4940, endereco:'Rua Barão de Saquarema',                    descricao:'Acidente entre carro e moto',               timestamp: new Date().toISOString() },
-          { id:5,  tipo:'evento',   lat:-22.9408, lng:-42.5012, endereco:'Praia de Saquarema – Av. Oceânica',         descricao:'Show na praia essa sexta!',                 timestamp: new Date().toISOString() },
-          { id:6,  tipo:'buraco',   lat:-22.9372, lng:-42.5030, endereco:'Av. Nossa Sra. de Nazaré',                  descricao:'Vários buracos após a chuva',               timestamp: new Date().toISOString() },
-          { id:7,  tipo:'transito', lat:-22.9310, lng:-42.4860, endereco:'Estrada dos Leigos – saída RJ-128',         descricao:'Congestionamento na saída da cidade',        timestamp: new Date().toISOString() },
-          { id:8,  tipo:'obras',    lat:-22.9355, lng:-42.4860, endereco:'Rua dos Mariscos',                          descricao:'Troca de tubulação – via semi-bloqueada',   timestamp: new Date().toISOString() },
-          { id:9,  tipo:'acidente', lat:-22.9390, lng:-42.4995, endereco:'Av. Oito de Maio c/ Av. Salgado Filho',    descricao:'Colisão traseira, aguardar guincho',         timestamp: new Date().toISOString() },
-          { id:10, tipo:'evento',   lat:-22.9330, lng:-42.4810, endereco:'Praça de Porto Novo',                       descricao:'Festa junina no bairro – sábado à noite',   timestamp: new Date().toISOString() }
+          { id:1,  tipo:'transito', lat:-22.9385, lng:-42.4965, endereco:'RJ-102 – Av. Oceânica, perto da Praça',      descricao:'Trânsito lento, semáforo quebrado',         timestamp: new Date().toISOString() },
+          { id:2,  tipo:'buraco',   lat:-22.9355, lng:-42.5010, endereco:'Av. Nossa Sra. de Nazaré, próx. nº 120',     descricao:'Buraco fundo na pista, perigo!',            timestamp: new Date().toISOString() },
+          { id:3,  tipo:'obras',    lat:-22.9298, lng:-42.4825, endereco:'RJ-128, saída Porto Novo',                   descricao:'Obras de recapeamento – faixa bloqueada',   timestamp: new Date().toISOString() },
+          { id:4,  tipo:'acidente', lat:-22.9368, lng:-42.5042, endereco:'Av. Salgado Filho c/ Av. Oito de Maio',      descricao:'Acidente entre carro e moto, devagar',      timestamp: new Date().toISOString() },
+          { id:5,  tipo:'evento',   lat:-22.9405, lng:-42.4980, endereco:'Praia de Itaúna – Av. Oceânica',             descricao:'Campeonato de surfe esse fim de semana!',   timestamp: new Date().toISOString() },
+          { id:6,  tipo:'buraco',   lat:-22.9330, lng:-42.5055, endereco:'Rua Barão de Saquarema, nº 80',              descricao:'Vários buracos após a chuva',               timestamp: new Date().toISOString() },
+          { id:7,  tipo:'transito', lat:-22.9310, lng:-42.4840, endereco:'Estrada dos Leigos – RJ-128 sentido norte',  descricao:'Congestionamento na saída da cidade',        timestamp: new Date().toISOString() },
+          { id:8,  tipo:'obras',    lat:-22.9345, lng:-42.4890, endereco:'Rua dos Mariscos – bairro Itaúna',           descricao:'Troca de tubulação – via semi-bloqueada',   timestamp: new Date().toISOString() },
+          { id:9,  tipo:'acidente', lat:-22.9420, lng:-42.4945, endereco:'RJ-102 km 3 – próx. Praia de Itaúna',        descricao:'Colisão traseira, aguardar guincho',         timestamp: new Date().toISOString() },
+          { id:10, tipo:'evento',   lat:-22.9322, lng:-42.4802, endereco:'Praça principal de Porto Novo',              descricao:'Festa junina – sábado à noite, entrada franca', timestamp: new Date().toISOString() }
         ];
       }
       renderizarMarcadores();
