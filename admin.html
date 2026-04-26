@@ -650,8 +650,8 @@ textarea.campo { height: 60px; resize: none; }
   const EMOJIS = {
     transito:'🚗', acidente:'🚨', obras:'🚧', buraco:'⚠️',
     evento:'🎉', alagamento:'🌊', restaurante:'🍽️', praia:'🏖️',
-    comercio:'🥐', saude:'🏥', escola:'⭐', religioso:'⛪',
-    esporte:'⚽', fixo:'⛰️', favorito:'⭐', outro:'📌'
+    comercio:'🏪', saude:'🏥', escola:'🏫', religioso:'⛪',
+    esporte:'⚽', fixo:'📌', outro:'📌'
   };
 
   function criarIcone(emoji) {
@@ -672,17 +672,8 @@ textarea.campo { height: 60px; resize: none; }
   let camadaReports, camadaLocais;
   let marcadorLocal = null;
 
-  // Locais fixos com coordenadas verificadas
-  locais = [
-    { id:1, tipo:'fixo',       nome:'Mirante Morro da Cruz',                        desc:'Vista panorâmica ⛰️',        end:'Estr. Latino Melo, 1763 - Porto da Roça', lat:-22.922413, lng:-42.480500 },
-    { id:2, tipo:'praia',      nome:'Praia da Barrinha',                            desc:'Praia tranquila 🏖️',         end:'R. Lagoinha - Itaúna',                    lat:-22.935432, lng:-42.490462 },
-    { id:3, tipo:'religioso',  nome:'Paróquia Nossa Senhora de Nazareth',           desc:'Marco histórico ⛪',          end:'Praça N. Sra. de Nazaré, 42 - Centro',    lat:-22.936869, lng:-42.492615 },
-    { id:4, tipo:'praia',      nome:'Praia da Vila',                                desc:'Praia central 🏖️',           end:'Saquarema - RJ',                          lat:-22.937500, lng:-42.494000 },
-    { id:5, tipo:'comercio',   nome:'Padaria da Ponte',                             desc:'Padaria no centro 🥐',        end:'Av. Saquarema, 350 - Centro',             lat:-22.932099, lng:-42.492516 },
-    { id:6, tipo:'restaurante',nome:'Garota de Itaúna',                             desc:'Restaurante em Itaúna 🍽️',   end:'Av. Oceânica, 165 - Itaúna',             lat:-22.935221, lng:-42.483442 },
-    { id:7, tipo:'restaurante',nome:'Restaurante Marisco',                          desc:'Frutos do mar 🦞',            end:'Rua Cons. Macedo Soares, 35 - Centro',    lat:-22.934091, lng:-42.494418 },
-    { id:8, tipo:'escola',     nome:'Universidade de Vassouras - Campus Saquarema', desc:'Campus universitário ⭐',     end:'Tv. do Ingá, 292 - Gravatá',             lat:-22.928994, lng:-42.510287 },
-  ].concat(JSON.parse(localStorage.getItem('saquanav-locais-extra') || '[]'));
+  // Sem locais fixos de pontos turísticos — apenas ocorrências de exemplo
+  locais = JSON.parse(localStorage.getItem('saquanav-locais-extra') || '[]');
 
   // ============================================
   // INICIAR APP (depois do login)
@@ -719,9 +710,24 @@ textarea.campo { height: 60px; resize: none; }
     } catch {
       // Dados de exemplo se o servidor estiver offline
       reports = [
-        { id:1, tipo:'buraco',   lat:-22.932500, lng:-42.497000, endereco:'Av. Oito de Maio - Centro', descricao:'Buraco enorme!', timestamp: new Date().toISOString(), status:'pendente' },
-        { id:2, tipo:'transito', lat:-22.933800, lng:-42.494100, endereco:'Av. Saquarema - Centro', descricao:'Trânsito parado na ponte', timestamp: new Date().toISOString(), status:'pendente' },
-        { id:3, tipo:'evento',   lat:-22.931000, lng:-42.491000, endereco:'Centro de Saquarema', descricao:'Show na praia essa sexta!', timestamp: new Date().toISOString(), status:'aprovado' }
+        // ── BACAXÁ ──
+        { id:1,  tipo:'transito', lat:-22.8954, lng:-42.4717, endereco:'Av. Saquarema - Bacaxá (altura do Ricamar)',       descricao:'Trânsito lento por obras de drenagem',          timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:2,  tipo:'transito', lat:-22.8936, lng:-42.4686, endereco:'Av. Saquarema - Bacaxá (Praça Santo Antônio)',     descricao:'Congestionamento no centro de Bacaxá',           timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:3,  tipo:'obras',    lat:-22.8948, lng:-42.4703, endereco:'Rua Beatriz Amaral - Bacaxá',                      descricao:'Obras de drenagem — via parcialmente interditada', timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:4,  tipo:'obras',    lat:-22.8942, lng:-42.4695, endereco:'Rua Prof. Souza - Bacaxá',                         descricao:'Obras de infraestrutura urbana',                 timestamp: new Date().toISOString(), status:'pendente' },
+        { id:5,  tipo:'buraco',   lat:-22.8960, lng:-42.4722, endereco:'Av. Saquarema - Bacaxá (saída sentido Saquarema)', descricao:'Buraco na pista após as obras',                 timestamp: new Date().toISOString(), status:'pendente' },
+        { id:6,  tipo:'buraco',   lat:-22.8930, lng:-42.4680, endereco:'Rua Regociano de Oliveira - Bacaxá',               descricao:'Buraco perigoso próximo ao CIEP',                timestamp: new Date().toISOString(), status:'pendente' },
+        { id:7,  tipo:'evento',   lat:-22.8936, lng:-42.4686, endereco:'Praça Santo Antônio - Bacaxá',                     descricao:'Feira livre de domingo — interdição parcial',    timestamp: new Date().toISOString(), status:'aprovado' },
+        // ── CENTRO / SAQUAREMA ──
+        { id:8,  tipo:'transito', lat:-22.9323, lng:-42.4938, endereco:'Ponte de Saquarema - Av. Saquarema',               descricao:'Trânsito intenso na ponte, sentido Bacaxá',      timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:9,  tipo:'obras',    lat:-22.9320, lng:-42.4925, endereco:'Av. Saquarema - Centro (Colégio Cenecista)',        descricao:'Desvio obrigatório sentido Bacaxá pela R. José Fidelis', timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:10, tipo:'buraco',   lat:-22.9335, lng:-42.4955, endereco:'Av. Min. Salgado Filho - Centro',                  descricao:'Buraco na via após chuvas',                     timestamp: new Date().toISOString(), status:'pendente' },
+        { id:11, tipo:'acidente', lat:-22.9340, lng:-42.4910, endereco:'Av. Oito de Maio - Centro',                        descricao:'Acidente entre dois veículos',                   timestamp: new Date().toISOString(), status:'pendente' },
+        { id:12, tipo:'evento',   lat:-22.9334, lng:-42.4953, endereco:'Praça de Saquarema - Centro',                      descricao:'Evento cultural na praça central',               timestamp: new Date().toISOString(), status:'aprovado' },
+        // ── ITAÚNA ──
+        { id:13, tipo:'transito', lat:-22.9350, lng:-42.4870, endereco:'Av. Oceânica - Itaúna',                            descricao:'Trânsito lento no acesso à praia',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:14, tipo:'acidente', lat:-22.9345, lng:-42.4855, endereco:'Av. Oceânica - Itaúna (altura da RJ-102)',         descricao:'Colisão traseira — faixa direita bloqueada',     timestamp: new Date().toISOString(), status:'pendente' },
+        { id:15, tipo:'buraco',   lat:-22.9338, lng:-42.4882, endereco:'Rua dos Mariscos - Itaúna',                        descricao:'Buraco grande na entrada da rua',                timestamp: new Date().toISOString(), status:'pendente' },
       ];
     }
     renderizarReports();
@@ -860,8 +866,7 @@ textarea.campo { height: 60px; resize: none; }
     };
 
     locais.push(novo);
-    const extras = locais.filter(l => l.id > 100);
-    localStorage.setItem('saquanav-locais-extra', JSON.stringify(extras));
+    localStorage.setItem('saquanav-locais', JSON.stringify(locais));
     fecharModal('modalNovoLocal');
     renderizarLocais();
     alert('✅ Local adicionado!');
@@ -870,8 +875,7 @@ textarea.campo { height: 60px; resize: none; }
   function deletarLocal(id) {
     if (!confirm('Deletar este local?')) return;
     locais = locais.filter(l => l.id !== id);
-    const extras = locais.filter(l => l.id > 100);
-    localStorage.setItem('saquanav-locais-extra', JSON.stringify(extras));
+    localStorage.setItem('saquanav-locais', JSON.stringify(locais));
     renderizarLocais();
   }
 

@@ -1092,11 +1092,24 @@
       } catch {
         // Sem servidor: usa dados de exemplo
         reports = [
-          { id:1, tipo:'transito', lat:-22.933800, lng:-42.494100, endereco:'Av. Saquarema - Centro', descricao:'Trânsito parado na ponte', timestamp: new Date().toISOString() },
-          { id:2, tipo:'buraco',   lat:-22.932500, lng:-42.497000, endereco:'Av. Oito de Maio - Centro', descricao:'Buraco grande! Cuidado!', timestamp: new Date().toISOString() },
-          { id:3, tipo:'evento',   lat:-22.931000, lng:-42.491000, endereco:'Centro de Saquarema', descricao:'Evento no centro da cidade!', timestamp: new Date().toISOString() },
-          { id:4, tipo:'obras',    lat:-22.930500, lng:-42.496500, endereco:'Av. Min. Salgado Filho', descricao:'Obras de recapeamento', timestamp: new Date().toISOString() },
-          { id:5, tipo:'acidente', lat:-22.934500, lng:-42.488500, endereco:'Av. Oceânica - Itaúna', descricao:'Acidente na via', timestamp: new Date().toISOString() },
+          // ── BACAXÁ ──
+          { id:1,  tipo:'transito', lat:-22.8954, lng:-42.4717, endereco:'Av. Saquarema - Bacaxá (altura do Ricamar)',      descricao:'Trânsito lento por obras de drenagem',         timestamp: new Date().toISOString() },
+          { id:2,  tipo:'transito', lat:-22.8936, lng:-42.4686, endereco:'Av. Saquarema - Bacaxá (Praça Santo Antônio)',    descricao:'Congestionamento no centro de Bacaxá',          timestamp: new Date().toISOString() },
+          { id:3,  tipo:'obras',    lat:-22.8948, lng:-42.4703, endereco:'Rua Beatriz Amaral - Bacaxá',                     descricao:'Obras de drenagem — via parcialmente interditada', timestamp: new Date().toISOString() },
+          { id:4,  tipo:'obras',    lat:-22.8942, lng:-42.4695, endereco:'Rua Prof. Souza - Bacaxá',                        descricao:'Obras de infraestrutura urbana',                timestamp: new Date().toISOString() },
+          { id:5,  tipo:'buraco',   lat:-22.8960, lng:-42.4722, endereco:'Av. Saquarema - Bacaxá (saída sentido Saquarema)', descricao:'Buraco na pista após as obras',                timestamp: new Date().toISOString() },
+          { id:6,  tipo:'buraco',   lat:-22.8930, lng:-42.4680, endereco:'Rua Regociano de Oliveira - Bacaxá',              descricao:'Buraco perigoso próximo ao CIEP',               timestamp: new Date().toISOString() },
+          { id:7,  tipo:'evento',   lat:-22.8936, lng:-42.4686, endereco:'Praça Santo Antônio - Bacaxá',                    descricao:'Feira livre de domingo — interdição parcial',   timestamp: new Date().toISOString() },
+          // ── CENTRO / SAQUAREMA ──
+          { id:8,  tipo:'transito', lat:-22.9323, lng:-42.4938, endereco:'Ponte de Saquarema - Av. Saquarema',              descricao:'Trânsito intenso na ponte, sentido Bacaxá',     timestamp: new Date().toISOString() },
+          { id:9,  tipo:'obras',    lat:-22.9320, lng:-42.4925, endereco:'Av. Saquarema - Centro (Colégio Cenecista)',       descricao:'Desvio obrigatório sentido Bacaxá pela R. José Fidelis', timestamp: new Date().toISOString() },
+          { id:10, tipo:'buraco',   lat:-22.9335, lng:-42.4955, endereco:'Av. Min. Salgado Filho - Centro',                 descricao:'Buraco na via após chuvas',                    timestamp: new Date().toISOString() },
+          { id:11, tipo:'acidente', lat:-22.9340, lng:-42.4910, endereco:'Av. Oito de Maio - Centro',                       descricao:'Acidente entre dois veículos',                  timestamp: new Date().toISOString() },
+          { id:12, tipo:'evento',   lat:-22.9334, lng:-42.4953, endereco:'Praça de Saquarema - Centro',                     descricao:'Evento cultural na praça central',              timestamp: new Date().toISOString() },
+          // ── ITAÚNA ──
+          { id:13, tipo:'transito', lat:-22.9350, lng:-42.4870, endereco:'Av. Oceânica - Itaúna',                           descricao:'Trânsito lento no acesso à praia',              timestamp: new Date().toISOString() },
+          { id:14, tipo:'acidente', lat:-22.9345, lng:-42.4855, endereco:'Av. Oceânica - Itaúna (altura da RJ-102)',        descricao:'Colisão traseira — faixa direita bloqueada',    timestamp: new Date().toISOString() },
+          { id:15, tipo:'buraco',   lat:-22.9338, lng:-42.4882, endereco:'Rua dos Mariscos - Itaúna',                       descricao:'Buraco grande na entrada da rua',               timestamp: new Date().toISOString() },
         ];
       }
       renderizarMarcadores();
@@ -1205,39 +1218,10 @@
     }, 4000);
 
     // ============================================
-    // LOCAIS FIXOS COM COORDENADAS VERIFICADAS
-    // ============================================
-    const LOCAIS_FIXOS = [
-      { nome:'Mirante Morro da Cruz',                        emoji:'⛰️',  lat:-22.922413, lng:-42.480500, end:'Estr. Latino Melo, 1763 - Porto da Roça' },
-      { nome:'Praia da Barrinha',                            emoji:'🏖️',  lat:-22.935432, lng:-42.490462, end:'R. Lagoinha - Itaúna' },
-      { nome:'Paróquia Nossa Senhora de Nazareth',           emoji:'⛪',  lat:-22.936869, lng:-42.492615, end:'Praça N. Sra. de Nazaré, 42 - Centro' },
-      { nome:'Praia da Vila',                                emoji:'🏖️',  lat:-22.937500, lng:-42.494000, end:'Saquarema - RJ' },
-      { nome:'Padaria da Ponte',                             emoji:'🥐',  lat:-22.932099, lng:-42.492516, end:'Av. Saquarema, 350 - Centro' },
-      { nome:'Garota de Itaúna',                             emoji:'🍽️',  lat:-22.935221, lng:-42.483442, end:'Av. Oceânica, 165 - Itaúna' },
-      { nome:'Restaurante Marisco',                          emoji:'🍽️',  lat:-22.934091, lng:-42.494418, end:'Rua Cons. Macedo Soares, 35 - Centro' },
-      { nome:'Universidade de Vassouras - Campus Saquarema', emoji:'⭐',  lat:-22.928994, lng:-42.510287, end:'Tv. do Ingá, 292 - Gravatá' },
-    ];
-
-    function adicionarLocaisFixos() {
-      LOCAIS_FIXOS.forEach(l => {
-        const m = L.marker([l.lat, l.lng], { icon: criarIcone(l.emoji) });
-        m.bindPopup(`
-          <div style="min-width:180px">
-            <div class="popup-titulo">${l.emoji} ${l.nome}</div>
-            <div class="popup-sub">📍 ${l.end}</div>
-            <button class="popup-btn-fav" onclick="abrirFavoritoDoMapa(${l.lat},${l.lng},'${l.end.replace(/'/g,"\\'")}')">❤️ Salvar nos favoritos</button>
-          </div>
-        `);
-        m.addTo(mapa);
-      });
-    }
-
-    // ============================================
     // INICIAR APP
     // ============================================
     carregarReports();
     carregarFavoritos();
-    adicionarLocaisFixos();
   </script>
 </body>
 </html>
