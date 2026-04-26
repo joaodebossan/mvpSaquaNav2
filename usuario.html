@@ -1092,10 +1092,11 @@
       } catch {
         // Sem servidor: usa dados de exemplo
         reports = [
-          { id:1, tipo:'transito', lat:-22.928, lng:-42.492, endereco:'Av. Salgado Filho', descricao:'Congestionamento na ponte', timestamp: new Date().toISOString() },
-          { id:2, tipo:'buraco',   lat:-22.930, lng:-42.488, endereco:'Rua dos Mariscos', descricao:'Buraco grande! Cuidado!', timestamp: new Date().toISOString() },
-          { id:3, tipo:'restaurante', lat:-22.926, lng:-42.495, endereco:'Rua da Praia', descricao:'Restaurante Peixe do Gustavo — ótimo fruto do mar! 🐟', timestamp: new Date().toISOString() },
-          { id:4, tipo:'obras',    lat:-22.932, lng:-42.490, endereco:'RJ-102, km 4', descricao:'Obras de recapeamento', timestamp: new Date().toISOString() }
+          { id:1, tipo:'transito', lat:-22.933800, lng:-42.494100, endereco:'Av. Saquarema - Centro', descricao:'Trânsito parado na ponte', timestamp: new Date().toISOString() },
+          { id:2, tipo:'buraco',   lat:-22.932500, lng:-42.497000, endereco:'Av. Oito de Maio - Centro', descricao:'Buraco grande! Cuidado!', timestamp: new Date().toISOString() },
+          { id:3, tipo:'evento',   lat:-22.931000, lng:-42.491000, endereco:'Centro de Saquarema', descricao:'Evento no centro da cidade!', timestamp: new Date().toISOString() },
+          { id:4, tipo:'obras',    lat:-22.930500, lng:-42.496500, endereco:'Av. Min. Salgado Filho', descricao:'Obras de recapeamento', timestamp: new Date().toISOString() },
+          { id:5, tipo:'acidente', lat:-22.934500, lng:-42.488500, endereco:'Av. Oceânica - Itaúna', descricao:'Acidente na via', timestamp: new Date().toISOString() },
         ];
       }
       renderizarMarcadores();
@@ -1204,32 +1205,17 @@
     }, 4000);
 
     // ============================================
-    // LOCAIS FIXOS DO SAQUANAV
+    // LOCAIS FIXOS COM COORDENADAS VERIFICADAS
     // ============================================
     const LOCAIS_FIXOS = [
-      // Pontos turísticos / praias
-      { nome:'Mirante Morro da Cruz',          tipo:'fixo',       emoji:'⛰️',  lat:-22.914800, lng:-42.526700, end:'Estr. Latino Melo, 1763 - Porto da Roça' },
-      { nome:'Praia da Barrinha',               tipo:'praia',      emoji:'🏖️',  lat:-22.930200, lng:-42.488000, end:'R. Lagoinha - Itaúna' },
-      { nome:'Paróquia Nossa Senhora de Nazareth', tipo:'religioso', emoji:'⛪', lat:-22.928393, lng:-42.491531, end:'Praça N. Sra. de Nazaré, 42 - Centro' },
-      { nome:'Praia da Vila',                   tipo:'praia',      emoji:'🏖️',  lat:-22.935000, lng:-42.497500, end:'Saquarema - RJ' },
-      { nome:'Padaria da Ponte',                tipo:'comercio',   emoji:'🥐',  lat:-22.927500, lng:-42.494000, end:'Av. Saquarema, 350 - Centro' },
-      { nome:'Garota de Itaúna',                tipo:'restaurante',emoji:'🍽️',  lat:-22.930600, lng:-42.483800, end:'Av. Oceânica, 165 - Itaúna' },
-      { nome:'Restaurante Marisco',             tipo:'restaurante',emoji:'🍽️',  lat:-22.929744, lng:-42.494476, end:'Rua Cons. Macedo Soares, 35 - Centro' },
-      { nome:'Universidade de Vassouras - Campus Saquarema', tipo:'favorito', emoji:'⭐', lat:-22.924100, lng:-42.497800, end:'Tv. do Ingá, 292 - Gravatá' },
-      // Ocorrências com coordenadas
-      { nome:'Obras',          tipo:'obras',   emoji:'🚧',  lat:-22.928808, lng:-42.510671, end:'Saquarema - RJ' },
-      { nome:'Buraco na via',  tipo:'buraco',  emoji:'⚠️',  lat:-22.933020, lng:-42.510047, end:'Saquarema - RJ' },
-      { nome:'Veículo parado', tipo:'transito',emoji:'🚗',  lat:-22.933033, lng:-42.508875, end:'Saquarema - RJ' },
-      { nome:'Evento',         tipo:'evento',  emoji:'🎉',  lat:-22.932040, lng:-42.500227, end:'Saquarema - RJ' },
-      { nome:'Evento',         tipo:'evento',  emoji:'🎉',  lat:-22.933424, lng:-42.494476, end:'Saquarema - RJ' },
-      { nome:'Buraco na pista',tipo:'buraco',  emoji:'⚠️',  lat:-22.932109, lng:-42.490957, end:'Saquarema - RJ' },
-      { nome:'Veículo parado', tipo:'transito',emoji:'🚗',  lat:-22.932426, lng:-42.493983, end:'Saquarema - RJ' },
-      { nome:'Evento',         tipo:'evento',  emoji:'🎉',  lat:-22.930440, lng:-42.497480, end:'Saquarema - RJ' },
-      { nome:'Buraco na via',  tipo:'buraco',  emoji:'⚠️',  lat:-22.924497, lng:-42.506646, end:'Saquarema - RJ' },
-      { nome:'Acidente',       tipo:'acidente',emoji:'🚨',  lat:-22.935340, lng:-42.495019, end:'Saquarema - RJ' },
-      { nome:'Acidente',       tipo:'acidente',emoji:'🚨',  lat:-22.929744, lng:-42.488820, end:'Saquarema - RJ' },
-      { nome:'Obra',           tipo:'obras',   emoji:'🚧',  lat:-22.930179, lng:-42.484872, end:'Saquarema - RJ' },
-      { nome:'Acidente',       tipo:'acidente',emoji:'🚨',  lat:-22.922768, lng:-42.481846, end:'Saquarema - RJ' },
+      { nome:'Mirante Morro da Cruz',                        emoji:'⛰️',  lat:-22.922413, lng:-42.480500, end:'Estr. Latino Melo, 1763 - Porto da Roça' },
+      { nome:'Praia da Barrinha',                            emoji:'🏖️',  lat:-22.935432, lng:-42.490462, end:'R. Lagoinha - Itaúna' },
+      { nome:'Paróquia Nossa Senhora de Nazareth',           emoji:'⛪',  lat:-22.936869, lng:-42.492615, end:'Praça N. Sra. de Nazaré, 42 - Centro' },
+      { nome:'Praia da Vila',                                emoji:'🏖️',  lat:-22.937500, lng:-42.494000, end:'Saquarema - RJ' },
+      { nome:'Padaria da Ponte',                             emoji:'🥐',  lat:-22.932099, lng:-42.492516, end:'Av. Saquarema, 350 - Centro' },
+      { nome:'Garota de Itaúna',                             emoji:'🍽️',  lat:-22.935221, lng:-42.483442, end:'Av. Oceânica, 165 - Itaúna' },
+      { nome:'Restaurante Marisco',                          emoji:'🍽️',  lat:-22.934091, lng:-42.494418, end:'Rua Cons. Macedo Soares, 35 - Centro' },
+      { nome:'Universidade de Vassouras - Campus Saquarema', emoji:'⭐',  lat:-22.928994, lng:-42.510287, end:'Tv. do Ingá, 292 - Gravatá' },
     ];
 
     function adicionarLocaisFixos() {
