@@ -1,0 +1,207 @@
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+// =====================
+// TEMA (claro/escuro)
+// =====================
+let isDark = localStorage.getItem('tema') === 'dark';
+
+function aplicarTema(){
+  document.body.classList.toggle('dark', isDark);
+  document.getElementById('btnTema').textContent = isDark ? '☀️' : '🌙';
+}
+
+function alternarTema(){
+  isDark = !isDark;
+  localStorage.setItem('tema', isDark ? 'dark' : 'light');
+  aplicarTema();
+}
+
+aplicarTema();
+
+
+// =====================
+// MAPA
+// =====================
+const CENTRO = [-22.9295, -42.4970];
+
+const mapa = L.map('mapa').setView(CENTRO, 14);
+
+// desativa zoom duplo (mais simples)
+mapa.doubleClickZoom.disable();
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(mapa);
+
+
+// =====================
+// ÍCONE SIMPLES
+// =====================
+function icone(emoji){
+  return L.divIcon({
+    html: "<div class='emoji-marker'>" + emoji + "</div>",
+    iconSize: [32,32]
+  });
+}
+
+
+// =====================
+// VARIÁVEIS
+// =====================
+let latLngAtual = null;
+let marcadorBusca = null;
+let favoritos = JSON.parse(localStorage.getItem('saquanav-favs') || '[]');
+
+
+// =====================
+// BUSCA DE ENDEREÇO
+// =====================
+function buscarEnd(texto){
+
+  if(texto.length < 3){
+    document.getElementById('searchResults').classList.remove('ativo');
+    return;
+  }
+
+  setTimeout(async function(){
+
+    try{
+      const url = "https://nominatim.openstreetmap.org/search?format=json&q=" 
+      + texto + ", Saquarema";
+
+      const resposta = await fetch(url);
+      const dados = await resposta.json();
+
+      if(dados.length === 0){
+        return;
+      }
+
+      let item = dados[0];
+
+      irPara(item.lat, item.lon, item.display_name);
+
+    }catch(erro){
+      console.log("Erro na busca");
+    }
+
+  }, 500);
+}
+
+
+// =====================
+// IR PARA LOCAL
+// =====================
+function irPara(lat, lon, nome){
+
+  if(marcadorBusca){
+    mapa.removeLayer(marcadorBusca);
+  }
+
+  marcadorBusca = L.marker([lat, lon], {
+    icon: icone('📍')
+  }).addTo(mapa);
+
+  mapa.flyTo([lat, lon], 16);
+}
+
+
+// =====================
+// MINHA LOCALIZAÇÃO
+// =====================
+function minhaLoc(){
+
+  if(!navigator.geolocation){
+    alert("Seu navegador não suporta localização");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(function(pos){
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    L.marker([lat, lon], {
+      icon: icone('📍')
+    }).addTo(mapa);
+
+    mapa.flyTo([lat, lon], 16);
+
+  });
+}
+
+
+// =====================
+// DUPLO CLIQUE (report)
+// =====================
+mapa.on('dblclick', function(e){
+
+  latLngAtual = e.latlng;
+
+  document.getElementById('endReport').value = "Local selecionado";
+
+  abrirModal('modalReport');
+});
+
+
+// =====================
+// SALVAR REPORT
+// =====================
+function salvarReport(){
+
+  let tipo = document.getElementById('tipoReport').value;
+
+  if(tipo === ""){
+    alert("Escolha um tipo");
+    return;
+  }
+
+  let descricao = document.getElementById('descReport').value;
+
+  // cria marcador
+  L.marker([latLngAtual.lat, latLngAtual.lng], {
+    icon: icone('🚧')
+  }).addTo(mapa)
+  .bindPopup(tipo + "<br>" + descricao);
+
+  fecharModal('modalReport');
+
+  alert("Report enviado!");
+}
+
+
+// =====================
+// FAVORITOS
+// =====================
+function salvarFav(){
+
+  let nome = document.getElementById('nomeFav').value;
+
+  let fav = {
+    id: Date.now(),
+    nome: nome,
+    lat: latLngAtual.lat,
+    lng: latLngAtual.lng,
+    emoji: document.getElementById('emojiFav').value
+  };
+
+  favoritos.push(fav);
+
+  localStorage.setItem('saquanav-favs', JSON.stringify(favoritos));
+
+  alert("Salvo!");
+}
+
+
+// =====================
+// MODAIS
+// =====================
+function abrirModal(id){
+  document.getElementById(id).classList.add('ativo');
+}
+
+function fecharModal(id){
+  document.getElementById(id).classList.remove('ativo');
+}
+
+</script>
