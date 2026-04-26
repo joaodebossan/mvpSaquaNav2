@@ -80,14 +80,11 @@
       gap: 8px;
     }
 
-    .logo {
-      color: white;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
+    .logo img {
+      height: 28px;
+      width: auto;
+      display: block;
     }
-
-    .logo span { color: #4da6ff; } /* "Nav" em azul */
 
     .navbar-btns {
       display: flex;
@@ -134,9 +131,9 @@
       background: rgba(255,255,255,0.12);
       border: 1.5px solid rgba(255,255,255,0.2);
       border-radius: 24px;
-      padding: 8px 16px 8px 38px;
+      padding: 6px 12px 6px 32px;
       color: white;
-      font-size: 13px;
+      font-size: 12px;
       outline: none;
     }
 
@@ -145,10 +142,10 @@
 
     .search-icon {
       position: absolute;
-      left: 12px;
+      left: 10px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 14px;
+      font-size: 12px;
       pointer-events: none;
     }
 
@@ -582,7 +579,7 @@
   ============================================= -->
   <div class="navbar">
     <div class="navbar-top">
-      <div class="logo">Saqua<span>Nav</span></div>
+      <div class="logo"><img src="logo.png" alt="SaquaNav"></div>
       <div class="navbar-btns">
         <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
         <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
@@ -1092,24 +1089,10 @@
       } catch {
         // Sem servidor: usa dados de exemplo
         reports = [
-          // ── BACAXÁ ──
-          { id:1,  tipo:'transito', lat:-22.8954, lng:-42.4717, endereco:'Av. Saquarema - Bacaxá (altura do Ricamar)',      descricao:'Trânsito lento por obras de drenagem',         timestamp: new Date().toISOString() },
-          { id:2,  tipo:'transito', lat:-22.8936, lng:-42.4686, endereco:'Av. Saquarema - Bacaxá (Praça Santo Antônio)',    descricao:'Congestionamento no centro de Bacaxá',          timestamp: new Date().toISOString() },
-          { id:3,  tipo:'obras',    lat:-22.8948, lng:-42.4703, endereco:'Rua Beatriz Amaral - Bacaxá',                     descricao:'Obras de drenagem — via parcialmente interditada', timestamp: new Date().toISOString() },
-          { id:4,  tipo:'obras',    lat:-22.8942, lng:-42.4695, endereco:'Rua Prof. Souza - Bacaxá',                        descricao:'Obras de infraestrutura urbana',                timestamp: new Date().toISOString() },
-          { id:5,  tipo:'buraco',   lat:-22.8960, lng:-42.4722, endereco:'Av. Saquarema - Bacaxá (saída sentido Saquarema)', descricao:'Buraco na pista após as obras',                timestamp: new Date().toISOString() },
-          { id:6,  tipo:'buraco',   lat:-22.8930, lng:-42.4680, endereco:'Rua Regociano de Oliveira - Bacaxá',              descricao:'Buraco perigoso próximo ao CIEP',               timestamp: new Date().toISOString() },
-          { id:7,  tipo:'evento',   lat:-22.8936, lng:-42.4686, endereco:'Praça Santo Antônio - Bacaxá',                    descricao:'Feira livre de domingo — interdição parcial',   timestamp: new Date().toISOString() },
-          // ── CENTRO / SAQUAREMA ──
-          { id:8,  tipo:'transito', lat:-22.9323, lng:-42.4938, endereco:'Ponte de Saquarema - Av. Saquarema',              descricao:'Trânsito intenso na ponte, sentido Bacaxá',     timestamp: new Date().toISOString() },
-          { id:9,  tipo:'obras',    lat:-22.9320, lng:-42.4925, endereco:'Av. Saquarema - Centro (Colégio Cenecista)',       descricao:'Desvio obrigatório sentido Bacaxá pela R. José Fidelis', timestamp: new Date().toISOString() },
-          { id:10, tipo:'buraco',   lat:-22.9335, lng:-42.4955, endereco:'Av. Min. Salgado Filho - Centro',                 descricao:'Buraco na via após chuvas',                    timestamp: new Date().toISOString() },
-          { id:11, tipo:'acidente', lat:-22.9340, lng:-42.4910, endereco:'Av. Oito de Maio - Centro',                       descricao:'Acidente entre dois veículos',                  timestamp: new Date().toISOString() },
-          { id:12, tipo:'evento',   lat:-22.9334, lng:-42.4953, endereco:'Praça de Saquarema - Centro',                     descricao:'Evento cultural na praça central',              timestamp: new Date().toISOString() },
-          // ── ITAÚNA ──
-          { id:13, tipo:'transito', lat:-22.9350, lng:-42.4870, endereco:'Av. Oceânica - Itaúna',                           descricao:'Trânsito lento no acesso à praia',              timestamp: new Date().toISOString() },
-          { id:14, tipo:'acidente', lat:-22.9345, lng:-42.4855, endereco:'Av. Oceânica - Itaúna (altura da RJ-102)',        descricao:'Colisão traseira — faixa direita bloqueada',    timestamp: new Date().toISOString() },
-          { id:15, tipo:'buraco',   lat:-22.9338, lng:-42.4882, endereco:'Rua dos Mariscos - Itaúna',                       descricao:'Buraco grande na entrada da rua',               timestamp: new Date().toISOString() },
+          { id:1, tipo:'transito', lat:-22.928, lng:-42.492, endereco:'Av. Salgado Filho', descricao:'Congestionamento na ponte', timestamp: new Date().toISOString() },
+          { id:2, tipo:'buraco',   lat:-22.930, lng:-42.488, endereco:'Rua dos Mariscos', descricao:'Buraco grande! Cuidado!', timestamp: new Date().toISOString() },
+          { id:3, tipo:'restaurante', lat:-22.926, lng:-42.495, endereco:'Rua da Praia', descricao:'Restaurante Peixe do Gustavo — ótimo fruto do mar! 🐟', timestamp: new Date().toISOString() },
+          { id:4, tipo:'obras',    lat:-22.932, lng:-42.490, endereco:'RJ-102, km 4', descricao:'Obras de recapeamento', timestamp: new Date().toISOString() }
         ];
       }
       renderizarMarcadores();

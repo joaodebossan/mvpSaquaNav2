@@ -61,13 +61,12 @@ body {
   padding: 32px;
 }
 
-.login-logo {
-  font-size: 28px;
-  font-weight: 800;
-  color: white;
+.login-logo img {
+  height: 36px;
+  width: auto;
   margin-bottom: 8px;
+  display: block;
 }
-.login-logo span { color: #4da6ff; }
 
 .login-sub {
   color: rgba(255,255,255,0.5);
@@ -138,8 +137,8 @@ body {
   transition: background 0.3s;
 }
 
-.logo { color: white; font-size: 17px; font-weight: 700; }
-.logo span { color: #4da6ff; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo img { height: 24px; width: auto; display: block; }
 .logo-badge {
   background: #4da6ff;
   color: #0b1b2b;
@@ -461,7 +460,7 @@ textarea.campo { height: 60px; resize: none; }
      TELA DE LOGIN
 ============================================= -->
 <div class="tela-login" id="telaLogin">
-  <div class="login-logo">Saqua<span>Nav</span></div>
+  <div class="login-logo"><img src="logo.png" alt="SaquaNav"></div>
   <div class="login-sub">Painel Administrativo</div>
 
   <div class="login-card">
@@ -482,7 +481,7 @@ textarea.campo { height: 60px; resize: none; }
 ============================================= -->
 <div class="navbar">
   <div class="logo">
-    Saqua<span>Nav</span>
+    <img src="logo.png" alt="SaquaNav">
     <span class="logo-badge">ADMIN</span>
   </div>
   <div class="navbar-btns">
@@ -672,8 +671,15 @@ textarea.campo { height: 60px; resize: none; }
   let camadaReports, camadaLocais;
   let marcadorLocal = null;
 
-  // Sem locais fixos de pontos turísticos — apenas ocorrências de exemplo
-  locais = JSON.parse(localStorage.getItem('saquanav-locais-extra') || '[]');
+  // Se não tiver locais, adiciona exemplos
+  if (!locais.length) {
+    locais = [
+      { id:1, tipo:'restaurante', nome:'Restaurante Peixe do Gustavo', desc:'Especialidade em frutos do mar! 🐟', end:'Rua da Praia, 45 - Itaúna', lat:-22.9268, lng:-42.4948 },
+      { id:2, tipo:'praia',       nome:'Praia de Itaúna', desc:'Famosa pelas ondas para surfe 🏄', end:'Av. Oceânica - Itaúna', lat:-22.9302, lng:-42.4880 },
+      { id:3, tipo:'religioso',   nome:'Igreja N.S. de Nazareth', desc:'Marco histórico de Saquarema ⛪', end:'Largo da Igreja, S/N', lat:-22.9284, lng:-42.4915 }
+    ];
+    localStorage.setItem('saquanav-locais', JSON.stringify(locais));
+  }
 
   // ============================================
   // INICIAR APP (depois do login)
@@ -710,24 +716,9 @@ textarea.campo { height: 60px; resize: none; }
     } catch {
       // Dados de exemplo se o servidor estiver offline
       reports = [
-        // ── BACAXÁ ──
-        { id:1,  tipo:'transito', lat:-22.8954, lng:-42.4717, endereco:'Av. Saquarema - Bacaxá (altura do Ricamar)',       descricao:'Trânsito lento por obras de drenagem',          timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:2,  tipo:'transito', lat:-22.8936, lng:-42.4686, endereco:'Av. Saquarema - Bacaxá (Praça Santo Antônio)',     descricao:'Congestionamento no centro de Bacaxá',           timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:3,  tipo:'obras',    lat:-22.8948, lng:-42.4703, endereco:'Rua Beatriz Amaral - Bacaxá',                      descricao:'Obras de drenagem — via parcialmente interditada', timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:4,  tipo:'obras',    lat:-22.8942, lng:-42.4695, endereco:'Rua Prof. Souza - Bacaxá',                         descricao:'Obras de infraestrutura urbana',                 timestamp: new Date().toISOString(), status:'pendente' },
-        { id:5,  tipo:'buraco',   lat:-22.8960, lng:-42.4722, endereco:'Av. Saquarema - Bacaxá (saída sentido Saquarema)', descricao:'Buraco na pista após as obras',                 timestamp: new Date().toISOString(), status:'pendente' },
-        { id:6,  tipo:'buraco',   lat:-22.8930, lng:-42.4680, endereco:'Rua Regociano de Oliveira - Bacaxá',               descricao:'Buraco perigoso próximo ao CIEP',                timestamp: new Date().toISOString(), status:'pendente' },
-        { id:7,  tipo:'evento',   lat:-22.8936, lng:-42.4686, endereco:'Praça Santo Antônio - Bacaxá',                     descricao:'Feira livre de domingo — interdição parcial',    timestamp: new Date().toISOString(), status:'aprovado' },
-        // ── CENTRO / SAQUAREMA ──
-        { id:8,  tipo:'transito', lat:-22.9323, lng:-42.4938, endereco:'Ponte de Saquarema - Av. Saquarema',               descricao:'Trânsito intenso na ponte, sentido Bacaxá',      timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:9,  tipo:'obras',    lat:-22.9320, lng:-42.4925, endereco:'Av. Saquarema - Centro (Colégio Cenecista)',        descricao:'Desvio obrigatório sentido Bacaxá pela R. José Fidelis', timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:10, tipo:'buraco',   lat:-22.9335, lng:-42.4955, endereco:'Av. Min. Salgado Filho - Centro',                  descricao:'Buraco na via após chuvas',                     timestamp: new Date().toISOString(), status:'pendente' },
-        { id:11, tipo:'acidente', lat:-22.9340, lng:-42.4910, endereco:'Av. Oito de Maio - Centro',                        descricao:'Acidente entre dois veículos',                   timestamp: new Date().toISOString(), status:'pendente' },
-        { id:12, tipo:'evento',   lat:-22.9334, lng:-42.4953, endereco:'Praça de Saquarema - Centro',                      descricao:'Evento cultural na praça central',               timestamp: new Date().toISOString(), status:'aprovado' },
-        // ── ITAÚNA ──
-        { id:13, tipo:'transito', lat:-22.9350, lng:-42.4870, endereco:'Av. Oceânica - Itaúna',                            descricao:'Trânsito lento no acesso à praia',               timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:14, tipo:'acidente', lat:-22.9345, lng:-42.4855, endereco:'Av. Oceânica - Itaúna (altura da RJ-102)',         descricao:'Colisão traseira — faixa direita bloqueada',     timestamp: new Date().toISOString(), status:'pendente' },
-        { id:15, tipo:'buraco',   lat:-22.9338, lng:-42.4882, endereco:'Rua dos Mariscos - Itaúna',                        descricao:'Buraco grande na entrada da rua',                timestamp: new Date().toISOString(), status:'pendente' },
+        { id:1, tipo:'buraco',   lat:-22.930, lng:-42.488, endereco:'Rua dos Mariscos', descricao:'Buraco enorme!', timestamp: new Date().toISOString(), status:'pendente' },
+        { id:2, tipo:'transito', lat:-22.928, lng:-42.492, endereco:'Av. Salgado Filho', descricao:'Trânsito parado na ponte', timestamp: new Date().toISOString(), status:'pendente' },
+        { id:3, tipo:'evento',   lat:-22.926, lng:-42.495, endereco:'Praia de Saquarema', descricao:'Show na praia essa sexta!', timestamp: new Date().toISOString(), status:'aprovado' }
       ];
     }
     renderizarReports();
