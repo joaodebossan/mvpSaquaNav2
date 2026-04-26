@@ -1,1210 +1,465 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <!-- Isso faz o site parecer um app no celular -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>SaquaNav</title>
-
-  <!-- Leaflet: biblioteca do mapa gratuito -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-  <style>
-    /* =============================================
-       CORES DO TEMA (claro e escuro)
-       Muda aqui para mudar as cores do app inteiro!
-    ============================================= */
-    :root {
-      --bg:       #f4f6fa;
-      --navbar:   #0b1b2b;
-      --card:     #ffffff;
-      --input:    #f0f2f5;
-      --text:     #0b1b2b;
-      --text2:    #666666;
-      --muted:    #aaaaaa;
-      --border:   #e0e4ea;
-      --accent:   #1a73e8;
-      --danger:   #e53935;
-    }
-
-    /* Tema escuro - ativa quando <body> tem a classe "dark" */
-    body.dark {
-      --bg:       #0a0a1a;
-      --navbar:   #060610;
-      --card:     #12122a;
-      --input:    #1a1a35;
-      --text:     #e8eaff;
-      --text2:    #8888bb;
-      --muted:    #4444aa;
-      --border:   #22224a;
-      --accent:   #4da6ff;
-      --danger:   #ff5252;
-    }
-
-    /* =============================================
-       ESTILOS GERAIS
-    ============================================= */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    /* =============================================
-       NAVBAR (barra do topo)
-    ============================================= */
-    .navbar {
-      background: var(--navbar);
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex-shrink: 0;
-      transition: background 0.3s;
-    }
-
-    /* Linha de cima da navbar: logo + botões */
-    .navbar-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .logo img {
-      height: 28px;
-      width: auto;
-      display: block;
-    }
-
-    .navbar-btns {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    /* Botão branco da navbar */
-    .btn-nav {
-      background: white;
-      color: #0b1b2b;
-      border: none;
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* Botão redondo do tema (lua/sol) */
-    .btn-theme {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      border: none;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* =============================================
-       BARRA DE BUSCA
-    ============================================= */
-    .search-wrapper {
-      position: relative;
-    }
-
-    .search-input {
-      width: 100%;
-      background: rgba(255,255,255,0.12);
-      border: 1.5px solid rgba(255,255,255,0.2);
-      border-radius: 24px;
-      padding: 6px 12px 6px 32px;
-      color: white;
-      font-size: 12px;
-      outline: none;
-    }
-
-    .search-input::placeholder { color: rgba(255,255,255,0.5); }
-    .search-input:focus { border-color: #4da6ff; }
-
-    .search-icon {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 12px;
-      pointer-events: none;
-    }
-
-    /* Lista de resultados da busca */
-    .search-results {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0; right: 0;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      z-index: 9999;
-      display: none;
-      max-height: 240px;
-      overflow-y: auto;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .search-results.ativo { display: block; }
-
-    .result-item {
-      padding: 11px 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      border-bottom: 0.5px solid var(--border);
-      transition: background 0.15s;
-    }
-
-    .result-item:last-child { border-bottom: none; }
-    .result-item:hover { background: var(--input); }
-
-    .result-nome {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .result-end {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .result-vazio {
-      padding: 14px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    /* =============================================
-       MAPA
-    ============================================= */
-    #mapa {
-      flex: 1;
-      width: 100%;
-    }
-
-    /* Mapa fica escuro no dark mode */
-    body.dark .leaflet-tile {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-    }
-
-    /* Marcadores emoji */
-    .emoji-marker {
-      font-size: 26px;
-      line-height: 1;
-      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
-    }
-
-    /* Popups do mapa */
-    .leaflet-popup-content-wrapper {
-      border-radius: 14px !important;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
-      background: var(--card) !important;
-    }
-    .leaflet-popup-tip { background: var(--card) !important; }
-    .leaflet-popup-content { color: var(--text) !important; margin: 12px 14px !important; }
-
-    /* Conteúdo do popup */
-    .popup-titulo {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-
-    .popup-sub {
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 8px;
-    }
-
-    .popup-desc {
-      font-size: 13px;
-      color: var(--text);
-      margin-bottom: 8px;
-      line-height: 1.5;
-    }
-
-    .popup-foto {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      max-height: 130px;
-      object-fit: cover;
-    }
-
-    .popup-data {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .popup-btn-fav {
-      width: 100%;
-      margin-top: 8px;
-      padding: 7px;
-      background: var(--input);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    /* =============================================
-       BARRA INFERIOR (abas)
-    ============================================= */
-    .bottom-bar {
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-around;
-      padding: 8px 0 12px;
-      flex-shrink: 0;
-      transition: background 0.3s;
-    }
-
-    .tab {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      cursor: pointer;
-      padding: 4px 16px;
-      border-radius: 12px;
-      transition: background 0.15s;
-    }
-
-    .tab:hover { background: var(--input); }
-    .tab-icon { font-size: 22px; }
-    .tab-label { font-size: 10px; color: var(--muted); font-weight: 500; }
-    .tab.ativo .tab-label { color: var(--accent); font-weight: 700; }
-
-    /* =============================================
-       MODAL (janela flutuante)
-    ============================================= */
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: flex-end;
-      z-index: 1000;
-    }
-
-    .modal-bg.ativo { display: flex; }
-
-    .modal-sheet {
-      background: var(--card);
-      border-radius: 24px 24px 0 0;
-      width: 100%;
-      padding: 16px 16px 32px;
-      max-height: 85vh;
-      overflow-y: auto;
-      transition: background 0.3s;
-    }
-
-    .modal-handle {
-      width: 40px; height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 0 auto 16px;
-    }
-
-    .modal-titulo {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 16px;
-    }
-
-    /* Campos do formulário */
-    .campo-label {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 5px;
-      display: block;
-    }
-
-    .campo {
-      width: 100%;
-      background: var(--input);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 14px;
-      color: var(--text);
-      outline: none;
-      margin-bottom: 12px;
-      transition: border 0.2s;
-    }
-
-    .campo:focus { border-color: var(--accent); }
-    .campo::placeholder { color: var(--muted); }
-
-    textarea.campo { height: 70px; resize: none; }
-
-    /* Botão de foto */
-    .btn-foto {
-      width: 100%;
-      background: var(--input);
-      border: 1.5px dashed var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      color: var(--text2);
-      font-size: 13px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    /* Botões de ação */
-    .btn-primario {
-      width: 100%;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-
-    .btn-secundario {
-      width: 100%;
-      background: var(--input);
-      color: var(--text2);
-      border: none;
-      border-radius: 14px;
-      padding: 12px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    /* =============================================
-       PAINEL DE FAVORITOS
-    ============================================= */
-    .painel {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 900;
-      display: none;
-      flex-direction: column;
-      transition: background 0.3s;
-    }
-
-    .painel.ativo { display: flex; }
-
-    .painel-header {
-      background: var(--navbar);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .painel-titulo {
-      color: white;
-      font-size: 17px;
-      font-weight: 700;
-    }
-
-    .btn-voltar {
-      background: rgba(255,255,255,0.15);
-      border: none;
-      color: white;
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .painel-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    /* Card de favorito */
-    .fav-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .fav-card:hover { background: var(--input); }
-    .fav-emoji { font-size: 28px; }
-
-    .fav-info { flex: 1; }
-    .fav-nome { font-size: 14px; font-weight: 600; color: var(--text); }
-    .fav-end { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-    .btn-del-fav {
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      color: var(--danger);
-      padding: 4px;
-    }
-
-    .vazio-msg {
-      text-align: center;
-      color: var(--muted);
-      font-size: 14px;
-      margin-top: 40px;
-    }
-
-    /* =============================================
-       PAINEL DE FILTROS
-    ============================================= */
-    .filtros-painel {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 900;
-      display: none;
-      flex-direction: column;
-      transition: background 0.3s;
-    }
-
-    .filtros-painel.ativo { display: flex; }
-
-    .filtro-item {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .filtro-esq {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 15px;
-      color: var(--text);
-    }
-
-    /* Toggle (botão liga/desliga) */
-    .toggle {
-      width: 44px; height: 24px;
-      border-radius: 12px;
-      background: var(--accent);
-      position: relative;
-      cursor: pointer;
-      transition: background 0.2s;
-      border: none;
-    }
-
-    .toggle::after {
-      content: '';
-      position: absolute;
-      width: 18px; height: 18px;
-      background: white;
-      border-radius: 50%;
-      top: 3px; right: 3px;
-      transition: right 0.2s;
-    }
-
-    .toggle.off { background: var(--border); }
-    .toggle.off::after { right: 23px; }
-
-    /* =============================================
-       DICA INICIAL
-    ============================================= */
-    .dica {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--navbar);
-      color: white;
-      padding: 10px 18px;
-      border-radius: 24px;
-      font-size: 12px;
-      text-align: center;
-      z-index: 500;
-      opacity: 1;
-      transition: opacity 0.5s;
-      white-space: nowrap;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<title>SaquaNav</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+/* ── TEMAS ── */
+:root{--bg:#f4f6fa;--navbar:#0b1b2b;--card:#fff;--input:#f0f2f5;--text:#0b1b2b;--text2:#666;--muted:#aaa;--border:#e0e4ea;--accent:#1a73e8;--danger:#e53935}
+body.dark{--bg:#0a0a1a;--navbar:#060610;--card:#12122a;--input:#1a1a35;--text:#e8eaff;--text2:#8888bb;--muted:#4444aa;--border:#22224a;--accent:#4da6ff;--danger:#ff5252}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:background .3s,color .3s}
+
+/* ── NAVBAR: tudo em UMA linha ── */
+.navbar{background:var(--navbar);padding:7px 10px;display:flex;align-items:center;gap:6px;flex-shrink:0;transition:background .3s}
+.logo{color:#fff;font-size:16px;font-weight:700;white-space:nowrap;flex-shrink:0;text-decoration:none}
+.logo span{color:#4da6ff}
+
+/* Busca compacta */
+.search-wrap{position:relative;flex:1;min-width:0}
+.search-input{width:100%;background:rgba(255,255,255,0.13);border:1.5px solid rgba(255,255,255,0.22);border-radius:18px;padding:5px 10px 5px 28px;color:#fff;font-size:12px;outline:none}
+.search-input::placeholder{color:rgba(255,255,255,0.4)}
+.search-input:focus{border-color:#4da6ff}
+.s-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none}
+
+/* Resultados da busca */
+.search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;z-index:9999;display:none;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.search-results.ativo{display:block}
+.result-item{padding:9px 12px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;border-bottom:.5px solid var(--border)}
+.result-item:last-child{border-bottom:none}
+.result-item:hover{background:var(--input)}
+.result-nome{font-size:13px;font-weight:600;color:var(--text)}
+.result-end{font-size:11px;color:var(--muted);margin-top:1px}
+.result-vazio{padding:12px;text-align:center;color:var(--muted);font-size:12px}
+
+/* Botões navbar */
+.btn-nav{background:#fff;color:#0b1b2b;border:none;border-radius:14px;padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+body.dark .btn-nav{background:var(--accent);color:#060610}
+.btn-theme{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── MAPA ── */
+#mapa{flex:1;width:100%}
+body.dark .leaflet-tile{filter:brightness(.6) invert(1) contrast(3) hue-rotate(200deg) saturate(.3) brightness(.7)}
+.emoji-marker{font-size:24px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.leaflet-popup-content-wrapper{border-radius:14px!important;background:var(--card)!important;border:1px solid var(--border)}
+.leaflet-popup-tip{background:var(--card)!important}
+.leaflet-popup-content{color:var(--text)!important;margin:12px 14px!important}
+
+/* ── BARRA INFERIOR ── */
+.bottom-bar{background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 12px;flex-shrink:0;transition:background .3s}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 14px;border-radius:10px}
+.tab:hover{background:var(--input)}
+.tab-icon{font-size:20px}
+.tab-label{font-size:10px;color:var(--muted);font-weight:500}
+.tab.ativo .tab-label{color:var(--accent);font-weight:700}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:1000}
+.modal-bg.ativo{display:flex}
+.modal-sheet{background:var(--card);border-radius:24px 24px 0 0;width:100%;padding:16px 16px 32px;max-height:85vh;overflow-y:auto;transition:background .3s}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-titulo{font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px}
+.campo-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block}
+.campo{width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);outline:none;margin-bottom:12px;appearance:none}
+.campo:focus{border-color:var(--accent)}
+.campo::placeholder{color:var(--muted)}
+textarea.campo{height:70px;resize:none}
+.btn-foto{width:100%;background:var(--input);border:1.5px dashed var(--border);border-radius:12px;padding:12px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
+.btn-primario{width:100%;background:var(--accent);color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+.btn-secundario{width:100%;background:var(--input);color:var(--text2);border:none;border-radius:14px;padding:12px;font-size:14px;cursor:pointer;margin-top:8px}
+
+/* ── PAINÉIS ── */
+.painel{position:fixed;inset:0;background:var(--bg);z-index:900;display:none;flex-direction:column;transition:background .3s}
+.painel.ativo{display:flex}
+.painel-header{background:var(--navbar);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.painel-titulo{color:#fff;font-size:17px;font-weight:700}
+.btn-voltar{background:rgba(255,255,255,0.15);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.painel-body{flex:1;overflow-y:auto;padding:16px}
+.fav-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.fav-card:hover{background:var(--input)}
+.fav-emoji{font-size:26px}
+.fav-nome{font-size:14px;font-weight:600;color:var(--text)}
+.fav-end{font-size:12px;color:var(--muted);margin-top:2px}
+.btn-del{background:none;border:none;font-size:18px;cursor:pointer;color:var(--danger);padding:4px}
+.filtro-item{background:var(--card);border-bottom:1px solid var(--border);padding:13px 16px;display:flex;align-items:center;justify-content:space-between}
+.filtro-esq{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text)}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--accent);position:relative;cursor:pointer;transition:background .2s;border:none}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;right:3px;transition:right .2s}
+.toggle.off{background:var(--border)}
+.toggle.off::after{right:23px}
+.vazio{text-align:center;color:var(--muted);font-size:13px;padding:32px 0}
+.dica{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:rgba(11,27,43,.92);color:#fff;padding:8px 16px;border-radius:24px;font-size:12px;z-index:500;white-space:nowrap;transition:opacity .5s}
+</style>
 </head>
 <body>
 
-  <!-- ============================================
-       NAVBAR
-  ============================================= -->
-  <div class="navbar">
-    <div class="navbar-top">
-      <div class="logo"><img src="logo.png" alt="SaquaNav"></div>
-      <div class="navbar-btns">
-        <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
-        <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
-      </div>
-    </div>
-
-    <!-- Barra de busca -->
-    <div class="search-wrapper">
-      <span class="search-icon">🔍</span>
-      <input
-        class="search-input"
-        id="searchInput"
-        type="text"
-        placeholder="Buscar endereço em Saquarema..."
-        autocomplete="off"
-        oninput="buscarEndereco(this.value)"
-      >
-      <div class="search-results" id="searchResults"></div>
-    </div>
+<!-- NAVBAR numa linha só -->
+<div class="navbar">
+  <a class="logo" href="#">Saqua<span>Nav</span></a>
+  <div class="search-wrap">
+    <span class="s-icon">🔍</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Buscar endereço..." autocomplete="off" oninput="buscarEnd(this.value)">
+    <div class="search-results" id="searchResults"></div>
   </div>
+  <button class="btn-nav" onclick="minhaLoc()">📍</button>
+  <button class="btn-nav" onclick="abrirPainel('painelFiltros')">Filtros</button>
+  <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
+</div>
 
-  <!-- ============================================
-       MAPA
-  ============================================= -->
-  <div id="mapa"></div>
+<div id="mapa"></div>
+<div class="dica" id="dica">💡 Toque 2x no mapa para reportar</div>
 
-  <!-- Dica para o usuário -->
-  <div class="dica" id="dica">💡 Toque duas vezes no mapa para reportar algo</div>
+<!-- BARRA INFERIOR -->
+<div class="bottom-bar">
+  <div class="tab ativo" onclick="setTab(this,'mapa')"><span class="tab-icon">🗺️</span><span class="tab-label">Mapa</span></div>
+  <div class="tab" onclick="setTab(this,'favoritos')"><span class="tab-icon">❤️</span><span class="tab-label">Favoritos</span></div>
+  <div class="tab" onclick="setTab(this,'sobre')"><span class="tab-icon">ℹ️</span><span class="tab-label">Sobre</span></div>
+</div>
 
-  <!-- ============================================
-       BARRA INFERIOR
-  ============================================= -->
-  <div class="bottom-bar">
-    <div class="tab ativo" onclick="setTab(this, 'mapa')">
-      <span class="tab-icon">🗺️</span>
-      <span class="tab-label">Mapa</span>
-    </div>
-    <div class="tab" onclick="setTab(this, 'filtros')">
-      <span class="tab-icon">🎚️</span>
-      <span class="tab-label">Filtros</span>
-    </div>
-    <div class="tab" onclick="setTab(this, 'favoritos')">
-      <span class="tab-icon">❤️</span>
-      <span class="tab-label">Favoritos</span>
-    </div>
-    <div class="tab" onclick="setTab(this, 'sobre')">
-      <span class="tab-icon">ℹ️</span>
-      <span class="tab-label">Sobre</span>
-    </div>
+<!-- MODAL: NOVO REPORT -->
+<div class="modal-bg" id="modalReport">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-titulo">📍 Novo Report</div>
+    <label class="campo-label">O que aconteceu?</label>
+    <select class="campo" id="tipoReport">
+      <option value="">Selecione...</option>
+      <option value="transito">🚗 Trânsito</option>
+      <option value="acidente">🚨 Acidente</option>
+      <option value="obras">🚧 Obras / Interditada</option>
+      <option value="buraco">⚠️ Buraco na via</option>
+      <option value="evento">🎉 Evento</option>
+      <option value="alagamento">🌊 Alagamento</option>
+      <option value="outro">📌 Outro</option>
+    </select>
+    <label class="campo-label">Endereço</label>
+    <input class="campo" id="endReport" type="text" placeholder="Detectando...">
+    <label class="campo-label">Descrição (opcional)</label>
+    <textarea class="campo" id="descReport" placeholder="Descreva o que está acontecendo..."></textarea>
+    <label class="campo-label">Foto (opcional)</label>
+    <label class="btn-foto" for="fotoReport">📸 Câmera / Galeria</label>
+    <input type="file" id="fotoReport" accept="image/*" capture="environment" style="display:none" onchange="prevFoto(this)">
+    <img id="prevImg" src="" style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:140px;object-fit:cover">
+    <button class="btn-primario" onclick="salvarReport()">✅ Enviar</button>
+    <button class="btn-secundario" onclick="fecharModal('modalReport')">Cancelar</button>
   </div>
+</div>
 
-  <!-- ============================================
-       MODAL: CRIAR NOVO REPORT
-  ============================================= -->
-  <div class="modal-bg" id="modalReport">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-titulo">📍 Novo Report</div>
-
-      <label class="campo-label">Tipo de ocorrência</label>
-      <select class="campo" id="tipoReport">
-        <option value="">Selecione...</option>
-        <option value="transito">🚗 Trânsito / Congestionamento</option>
-        <option value="acidente">🚨 Acidente</option>
-        <option value="obras">🚧 Obras / Rua interditada</option>
-        <option value="buraco">⚠️ Buraco na via</option>
-        <option value="evento">🎉 Evento</option>
-        <option value="alagamento">🌊 Alagamento</option>
-        <option value="outro">📌 Outro</option>
-      </select>
-
-      <label class="campo-label">Endereço</label>
-      <input class="campo" id="enderecoReport" type="text" placeholder="Detectando endereço...">
-
-      <label class="campo-label">Descrição (opcional)</label>
-      <textarea class="campo" id="descReport" placeholder="Ex: Buraco enorme na esquina, cuidado!"></textarea>
-
-      <label class="campo-label">Foto (opcional)</label>
-      <label class="btn-foto" for="fotoReport">
-        📸 Tirar foto / Escolher da galeria
-      </label>
-      <input type="file" id="fotoReport" accept="image/*" capture="environment" style="display:none" onchange="previewFoto(this)">
-      <img id="previewFoto" src="" style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:150px;object-fit:cover;">
-
-      <button class="btn-primario" onclick="salvarReport()">✅ Enviar Report</button>
-      <button class="btn-secundario" onclick="fecharModal('modalReport')">Cancelar</button>
-    </div>
+<!-- MODAL: FAVORITAR -->
+<div class="modal-bg" id="modalFav">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-titulo">❤️ Salvar Favorito</div>
+    <label class="campo-label">Ícone</label>
+    <select class="campo" id="emojiFav">
+      <option value="❤️">❤️ Favorito</option>
+      <option value="🏠">🏠 Casa</option>
+      <option value="💼">💼 Trabalho</option>
+      <option value="🍽️">🍽️ Restaurante</option>
+      <option value="☕">☕ Café</option>
+      <option value="🏥">🏥 Hospital</option>
+      <option value="🎓">🎓 Faculdade</option>
+      <option value="🏖️">🏖️ Praia</option>
+      <option value="⭐">⭐ Especial</option>
+    </select>
+    <label class="campo-label">Nome</label>
+    <input class="campo" id="nomeFav" type="text" placeholder="Ex: Casa, Trabalho, Padaria...">
+    <label class="campo-label">Endereço</label>
+    <input class="campo" id="endFav" type="text" placeholder="Detectando...">
+    <button class="btn-primario" onclick="salvarFav()">💾 Salvar</button>
+    <button class="btn-secundario" onclick="fecharModal('modalFav')">Cancelar</button>
   </div>
+</div>
 
-  <!-- ============================================
-       MODAL: FAVORITAR LOCAL
-  ============================================= -->
-  <div class="modal-bg" id="modalFavorito">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-titulo">❤️ Salvar Favorito</div>
-
-      <label class="campo-label">Ícone</label>
-      <select class="campo" id="emojiFav">
-        <option value="❤️">❤️ Favorito</option>
-        <option value="🏠">🏠 Casa</option>
-        <option value="💼">💼 Trabalho</option>
-        <option value="🍽️">🍽️ Restaurante</option>
-        <option value="☕">☕ Café</option>
-        <option value="🏥">🏥 Hospital / Clínica</option>
-        <option value="🏫">🏫 Escola</option>
-        <option value="⛪">⛪ Igreja</option>
-        <option value="🏖️">🏖️ Praia</option>
-        <option value="⭐">⭐ Favorito especial</option>
-      </select>
-
-      <label class="campo-label">Nome do local</label>
-      <input class="campo" id="nomeFav" type="text" placeholder="Ex: Casa da Vó, Trabalho, Padaria...">
-
-      <label class="campo-label">Endereço</label>
-      <input class="campo" id="enderecoFav" type="text" placeholder="Detectando endereço...">
-
-      <button class="btn-primario" onclick="salvarFavorito()">💾 Salvar</button>
-      <button class="btn-secundario" onclick="fecharModal('modalFavorito')">Cancelar</button>
-    </div>
+<!-- PAINEL: FAVORITOS -->
+<div class="painel" id="painelFavoritos">
+  <div class="painel-header">
+    <button class="btn-voltar" onclick="fecharPainel('painelFavoritos')">←</button>
+    <div class="painel-titulo">❤️ Meus Favoritos</div>
   </div>
+  <div class="painel-body" id="listaFavs"><div class="vazio">Nenhum favorito ainda.<br>Toque 2x no mapa para salvar!</div></div>
+</div>
 
-  <!-- ============================================
-       PAINEL: FAVORITOS
-  ============================================= -->
-  <div class="painel" id="painelFavoritos">
-    <div class="painel-header">
-      <button class="btn-voltar" onclick="fecharPainel('painelFavoritos')">←</button>
-      <div class="painel-titulo">❤️ Meus Favoritos</div>
-    </div>
-    <div class="painel-body" id="listaFavoritos">
-      <div class="vazio-msg">Você ainda não tem favoritos.<br>Toque duas vezes no mapa e salve um local!</div>
-    </div>
+<!-- PAINEL: FILTROS -->
+<div class="painel" id="painelFiltros">
+  <div class="painel-header">
+    <button class="btn-voltar" onclick="fecharPainel('painelFiltros')">←</button>
+    <div class="painel-titulo">🎚️ Filtros</div>
   </div>
-
-  <!-- ============================================
-       PAINEL: FILTROS
-  ============================================= -->
-  <div class="filtros-painel" id="painelFiltros">
-    <div class="painel-header">
-      <button class="btn-voltar" onclick="fecharPainel('painelFiltros')">←</button>
-      <div class="painel-titulo">🎚️ Filtros</div>
-    </div>
-    <div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🚗</span> Trânsito</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'transito')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🚨</span> Acidente</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'acidente')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🚧</span> Obras</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'obras')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>⚠️</span> Buraco na via</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'buraco')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🎉</span> Evento</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'evento')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🌊</span> Alagamento</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'alagamento')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🍽️</span> Restaurantes</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'restaurante')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>❤️</span> Meus Favoritos</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'favorito')"></button>
-      </div>
-    </div>
+  <div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🚗</span>Trânsito</div><button class="toggle" onclick="filtrar(this,'transito')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🚨</span>Acidente</div><button class="toggle" onclick="filtrar(this,'acidente')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🚧</span>Obras</div><button class="toggle" onclick="filtrar(this,'obras')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>⚠️</span>Buraco na via</div><button class="toggle" onclick="filtrar(this,'buraco')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🎉</span>Evento</div><button class="toggle" onclick="filtrar(this,'evento')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🌊</span>Alagamento</div><button class="toggle" onclick="filtrar(this,'alagamento')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🍽️</span>Restaurantes</div><button class="toggle" onclick="filtrar(this,'restaurante')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🏖️</span>Praias / Turismo</div><button class="toggle" onclick="filtrar(this,'praia')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>⛪</span>Religioso</div><button class="toggle" onclick="filtrar(this,'religioso')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🏪</span>Comércio</div><button class="toggle" onclick="filtrar(this,'comercio')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>🎓</span>Universidade</div><button class="toggle" onclick="filtrar(this,'universidade')"></button></div>
+    <div class="filtro-item"><div class="filtro-esq"><span>❤️</span>Meus Favoritos</div><button class="toggle" onclick="filtrar(this,'favorito')"></button></div>
   </div>
+</div>
 
-  <!-- ============================================
-       PAINEL: SOBRE
-  ============================================= -->
-  <div class="painel" id="painelSobre">
-    <div class="painel-header">
-      <button class="btn-voltar" onclick="fecharPainel('painelSobre')">←</button>
-      <div class="painel-titulo">ℹ️ Sobre o SaquaNav</div>
-    </div>
-    <div class="painel-body" style="text-align:center;padding-top:32px;">
-      <div style="font-size:64px;margin-bottom:16px;">🗺️</div>
-      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">SaquaNav</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.7;padding:0 16px;">
-        Aplicativo colaborativo de informações urbanas de Saquarema.<br><br>
-        Reporte trânsito, obras, acidentes e eventos para ajudar sua comunidade! 💙<br><br>
-        <strong style="color:var(--text)">Como usar:</strong><br>
-        Toque duas vezes no mapa para reportar algo ou salvar um favorito.
-      </div>
-      <div style="margin-top:32px;font-size:12px;color:var(--muted);">
-        Desenvolvido com ❤️ em Saquarema, RJ<br>
-        Versão 2.0 — Usuário
-      </div>
-    </div>
+<!-- PAINEL: SOBRE -->
+<div class="painel" id="painelSobre">
+  <div class="painel-header">
+    <button class="btn-voltar" onclick="fecharPainel('painelSobre')">←</button>
+    <div class="painel-titulo">ℹ️ Sobre</div>
   </div>
+  <div class="painel-body" style="text-align:center;padding-top:32px">
+    <div style="font-size:60px;margin-bottom:16px">🗺️</div>
+    <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px">SaquaNav</div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.8;padding:0 12px">
+      App colaborativo de informações urbanas de Saquarema.<br><br>
+      Reporte trânsito, obras, acidentes e eventos para ajudar sua comunidade! 💙<br><br>
+      <strong style="color:var(--text)">Como usar:</strong><br>
+      Toque <strong>duas vezes</strong> no mapa para reportar algo ou salvar um favorito.
+    </div>
+    <div style="margin-top:32px;font-size:12px;color:var(--muted)">Desenvolvido em Saquarema, RJ 💙<br>Versão 2.0</div>
+  </div>
+</div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── TEMA ──
+let isDark=localStorage.getItem('tema')==='dark';
+function aplicarTema(){document.body.classList.toggle('dark',isDark);document.getElementById('btnTema').textContent=isDark?'☀️':'🌙'}
+function alternarTema(){isDark=!isDark;localStorage.setItem('tema',isDark?'dark':'light');aplicarTema()}
+aplicarTema();
 
-  <script>
-    // ============================================
-    // CONFIGURAÇÃO DO MAPA
-    // Centro de Saquarema (Igreja de N.S. Nazareth)
-    // ============================================
-    const CENTRO = [-22.928393, -42.491531];
+// ── MAPA ──
+const CENTRO=[-22.9295,-42.4970];
+const mapa=L.map('mapa',{doubleClickZoom:false}).setView(CENTRO,14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(mapa);
+body.dark .leaflet-tile; // aplicado via CSS
 
-    const mapa = L.map('mapa', {
-      doubleClickZoom: false // desativa zoom duplo para usarmos o duplo clique para reportar
-    }).setView(CENTRO, 15);
+const EMOJIS={transito:'🚗',acidente:'🚨',obras:'🚧',buraco:'⚠️',evento:'🎉',alagamento:'🌊',restaurante:'🍽️',praia:'🏖️',religioso:'⛪',comercio:'🏪',universidade:'🎓',favorito:'❤️',outro:'📌'};
+function icone(e){return L.divIcon({html:`<div class="emoji-marker">${e}</div>`,className:'',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-16]})}
 
-    // Camada do mapa (OpenStreetMap - gratuito!)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(mapa);
+// ── LOCAIS FIXOS (restaurantes, pontos turísticos) ──
+const LOCAIS=[
+  {tipo:'praia',      nome:'Mirante Morro da Cruz',              desc:'Vista panorâmica da Lagoa de Saquarema. Pôr do sol imperdível! 🌅',   end:'Estr. Latino Melo, 1763 - Porto da Roça', lat:-22.9069,lng:-42.5100},
+  {tipo:'praia',      nome:'Praia da Barrinha',                  desc:'Praia tranquila em Itaúna, ótima para família 🏖️',                    end:'R. Lagoinha - Itaúna',                    lat:-22.9358,lng:-42.4945},
+  {tipo:'religioso',  nome:'Paróquia N. Sra. de Nazareth',       desc:'Igreja histórica do século XVII, cartão postal de Saquarema ⛪',      end:'Praça N. Sra. de Nazaré, 42 - Centro',    lat:-22.9284,lng:-42.4915},
+  {tipo:'praia',      nome:'Praia da Vila',                      desc:'Praia central de Saquarema, agitada e cheia de surf 🏄',              end:'Av. da Praia - Centro',                   lat:-22.9330,lng:-42.5005},
+  {tipo:'comercio',   nome:'Padaria da Ponte',                   desc:'Padaria tradicional de Saquarema 🥐',                                 end:'Av. Saquarema, 350 - Centro',             lat:-22.9268,lng:-42.4985},
+  {tipo:'restaurante',nome:'Garota de Itaúna',                   desc:'Restaurante à beira-mar, frutos do mar frescos 🍤',                   end:'Av. Oceânica, 165 - Itaúna',              lat:-22.9305,lng:-42.4858},
+  {tipo:'restaurante',nome:'Restaurante Marisco',                desc:'Especialidade em mariscos e pratos da culinária local 🦀',            end:'Rua Cons. Macedo Soares, 35 - Centro',    lat:-22.9278,lng:-42.4935},
+];
 
-    // ============================================
-    // ESTADO DO APP (dados em memória)
-    // ============================================
-    let reports = [];       // lista de reports do servidor
-    let favoritos = [];     // lista de favoritos do localStorage
-    let filtrosAtivos = new Set(['transito','acidente','obras','buraco','evento','alagamento','restaurante','favorito']);
-    let latLngAtual = null; // coordenadas do último clique duplo
-    let marcadorBusca = null;
+// ── UNIVERSIDADE DE VASSOURAS - 3 CAMPUS (como favoritos) ──
+const UNIVASSOURAS=[
+  {tipo:'universidade',nome:'Univassouras - Campus 1 (Bacaxá)',  desc:'Campus 1 — Rua Estudante Evaldo Silva Gomes 🎓',                     end:'R. Evaldo Silva Gomes, s/n - Bacaxá',     lat:-22.9508,lng:-42.5268},
+  {tipo:'universidade',nome:'Univassouras - Campus 2 (Porto da Roça)',desc:'Campus 2 — Travessa Sigmund Freud, 22 🎓',                      end:'Tv. Sigmund Freud, 22 - Porto da Roça',   lat:-22.9115,lng:-42.5180},
+  {tipo:'universidade',nome:'Univassouras - Campus 3 (Gravatá)', desc:'Campus 3 — Travessa do Ingá, 292 🎓',                               end:'Tv. do Ingá, 292 - Gravatá',              lat:-22.9287,lng:-42.5116},
+];
 
-    // Camada de marcadores do mapa
-    const camada = L.layerGroup().addTo(mapa);
+// ── OCORRÊNCIAS (todas nas ruas, verificadas no OSM) ──
+const REPORTS_BASE=[
+  // OBRAS
+  {id:101,tipo:'obras',   lat:-22.9288,lng:-42.5108,end:'Travessa do Ingá - Gravatá',         desc:'Obras na via, atenção! Desvio obrigatório 🚧'},
+  {id:112,tipo:'obras',   lat:-22.9258,lng:-42.4832,end:'Rua dos Mariscos - Itaúna',          desc:'Recapeamento em andamento, use o desvio 🚧'},
+  // BURACOS
+  {id:102,tipo:'buraco',  lat:-22.9298,lng:-42.5038,end:'Av. Saquarema - Centro',             desc:'Buraco grande na pista, reduza a velocidade! ⚠️'},
+  {id:106,tipo:'buraco',  lat:-22.9295,lng:-42.4895,end:'Rua dos Pescadores - Itaúna',        desc:'Buraco perigoso, cuidado! ⚠️'},
+  {id:109,tipo:'buraco',  lat:-22.9258,lng:-42.5045,end:'Rua do Centro - Saquarema',          desc:'Buraco na via central ⚠️'},
+  // TRÂNSITO
+  {id:103,tipo:'transito',lat:-22.9312,lng:-42.5018,end:'Av. Saquarema / RJ-102',             desc:'Trânsito lento sentido Bacaxá 🚗'},
+  {id:107,tipo:'transito',lat:-22.9302,lng:-42.4875,end:'Av. Oceânica - Itaúna',              desc:'Congestionamento na Av. Oceânica 🚗'},
+  // EVENTOS
+  {id:104,tipo:'evento',  lat:-22.9305,lng:-42.4972,end:'Orla de Saquarema',                  desc:'Festival de verão na orla! 🎉 Hoje a partir das 18h'},
+  {id:105,tipo:'evento',  lat:-22.9285,lng:-42.4930,end:'Centro de Saquarema',                desc:'Feira de artesanato no centro 🎊 Sábado e domingo'},
+  {id:108,tipo:'evento',  lat:-22.9275,lng:-42.4850,end:'Av. Oceânica - Itaúna',              desc:'Competição de surfe em Itaúna 🏄 Próximo fim de semana'},
+  // ACIDENTES
+  {id:110,tipo:'acidente',lat:-22.9318,lng:-42.4938,end:'Rua dos Mariscos - Itaúna',          desc:'Acidente entre veículos! Aguarde socorro 🚨'},
+  {id:111,tipo:'acidente',lat:-22.9275,lng:-42.4882,end:'Av. Oceânica - Itaúna',              desc:'Colisão na Av. Oceânica, trânsito lento 🚨'},
+  {id:113,tipo:'acidente',lat:-22.9228,lng:-42.4818,end:'RJ-102 - Itaúna',                    desc:'Acidente na rodovia, acostamento bloqueado 🚨'},
+];
 
-    // Emojis para cada tipo
-    const EMOJIS = {
-      transito: '🚗', acidente: '🚨', obras: '🚧',
-      buraco: '⚠️', evento: '🎉', alagamento: '🌊',
-      restaurante: '🍽️', outro: '📌', favorito: '❤️'
-    };
+let reports=[...REPORTS_BASE];
+let favoritos=JSON.parse(localStorage.getItem('saquanav-favs')||'[]');
+let filtrosAtivos=new Set(['transito','acidente','obras','buraco','evento','alagamento','restaurante','praia','religioso','comercio','universidade','favorito']);
+let latLngAtual=null,marcadorBusca=null;
+const camada=L.layerGroup().addTo(mapa);
 
-    // ============================================
-    // TEMA (claro/escuro)
-    // ============================================
-    let isDark = localStorage.getItem('tema') === 'dark';
+// Botão de favoritar no popup
+function btnFavPopup(lat,lng,end,nome){
+  return `<button onclick="abrirFavDoMapa(${lat},${lng},'${end.replace(/'/g,"\\'")}','${nome.replace(/'/g,"\\'")}')" style="width:100%;margin-top:8px;padding:7px;background:var(--input,#f0f2f5);border:1px solid var(--border,#e0e4ea);border-radius:8px;font-size:13px;cursor:pointer;color:var(--text,#0b1b2b)">❤️ Salvar nos favoritos</button>`;
+}
 
-    function aplicarTema() {
-      document.body.classList.toggle('dark', isDark);
-      document.getElementById('btnTema').textContent = isDark ? '☀️' : '🌙';
-    }
+// ── RENDERIZAR TODOS OS MARCADORES ──
+function renderizar(){
+  camada.clearLayers();
 
-    function alternarTema() {
-      isDark = !isDark;
-      localStorage.setItem('tema', isDark ? 'dark' : 'light');
-      aplicarTema();
-    }
+  // Locais fixos
+  LOCAIS.forEach(l=>{
+    if(!filtrosAtivos.has(l.tipo))return;
+    L.marker([l.lat,l.lng],{icon:icone(EMOJIS[l.tipo]||'📌')})
+      .bindPopup(`<div style="min-width:200px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">${EMOJIS[l.tipo]} ${l.nome}</div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px">📍 ${l.end}</div>
+        <div style="font-size:13px;line-height:1.5;margin-bottom:4px">${l.desc}</div>
+        ${btnFavPopup(l.lat,l.lng,l.end,l.nome)}
+      </div>`).addTo(camada);
+  });
 
-    aplicarTema(); // aplica o tema salvo ao carregar
-
-    // ============================================
-    // BUSCA DE ENDEREÇO
-    // ============================================
-    let timerBusca = null;
-
-    function buscarEndereco(texto) {
-      clearTimeout(timerBusca);
-      const box = document.getElementById('searchResults');
-
-      if (texto.trim().length < 3) {
-        box.classList.remove('ativo');
-        return;
-      }
-
-      box.innerHTML = '<div class="result-vazio">🔍 Buscando...</div>';
-      box.classList.add('ativo');
-
-      // Espera 600ms antes de buscar (para não buscar a cada letra)
-      timerBusca = setTimeout(async () => {
-        try {
-          const q = encodeURIComponent(texto + ', Saquarema, Rio de Janeiro, Brasil');
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`, {
-            headers: { 'Accept-Language': 'pt-BR' }
-          });
-          const data = await res.json();
-
-          if (!data.length) {
-            box.innerHTML = '<div class="result-vazio">Nenhum endereço encontrado.</div>';
-            return;
-          }
-
-          box.innerHTML = data.map(item => `
-            <div class="result-item" onclick="irPara(${item.lat}, ${item.lon}, '${item.display_name.replace(/'/g,"\\'")}')">
-              <span style="font-size:20px">📍</span>
-              <div>
-                <div class="result-nome">${item.display_name.split(',')[0]}</div>
-                <div class="result-end">${item.display_name.split(',').slice(1,3).join(', ')}</div>
-              </div>
-            </div>
-          `).join('');
-        } catch {
-          box.innerHTML = '<div class="result-vazio">Erro na busca.</div>';
-        }
-      }, 600);
-    }
-
-    // Vai até o endereço buscado
-    function irPara(lat, lon, nome) {
-      document.getElementById('searchResults').classList.remove('ativo');
-      document.getElementById('searchInput').value = nome.split(',')[0];
-      if (marcadorBusca) mapa.removeLayer(marcadorBusca);
-      marcadorBusca = L.marker([lat, lon], { icon: criarIcone('📍') }).addTo(mapa);
-      marcadorBusca.bindPopup(`<div class="popup-titulo">📍 ${nome.split(',')[0]}</div>`).openPopup();
-      mapa.flyTo([lat, lon], 17);
-    }
-
-    // Fecha busca ao clicar fora
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.search-wrapper'))
-        document.getElementById('searchResults').classList.remove('ativo');
+  // Univassouras (favoritos fixos)
+  if(filtrosAtivos.has('universidade')){
+    UNIVASSOURAS.forEach(u=>{
+      L.marker([u.lat,u.lng],{icon:icone('🎓')})
+        .bindPopup(`<div style="min-width:200px">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px">🎓 ${u.nome}</div>
+          <div style="font-size:11px;color:#888;margin-bottom:8px">📍 ${u.end}</div>
+          <div style="font-size:13px;line-height:1.5;margin-bottom:4px">${u.desc}</div>
+          ${btnFavPopup(u.lat,u.lng,u.end,u.nome)}
+        </div>`).addTo(camada);
     });
+  }
 
-    // ============================================
-    // MINHA LOCALIZAÇÃO
-    // ============================================
-    let marcadorLocal = null;
+  // Ocorrências
+  reports.forEach(r=>{
+    if(!filtrosAtivos.has(r.tipo))return;
+    const e=EMOJIS[r.tipo]||'📌';
+    const foto=r.foto?`<img src="${r.foto}" style="width:100%;border-radius:8px;margin-bottom:8px;max-height:120px;object-fit:cover">`:'';
+    L.marker([r.lat,r.lng],{icon:icone(e)})
+      .bindPopup(`<div style="min-width:200px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">${e} ${r.tipo.charAt(0).toUpperCase()+r.tipo.slice(1)}</div>
+        <div style="font-size:11px;color:#888;margin-bottom:6px">📍 ${r.end||''}</div>
+        ${foto}
+        ${r.desc?`<div style="font-size:13px;line-height:1.5;margin-bottom:6px">${r.desc}</div>`:''}
+        ${btnFavPopup(r.lat,r.lng,r.end||'',r.tipo)}
+      </div>`).addTo(camada);
+  });
 
-    function minhaLocalizacao() {
-      if (!navigator.geolocation) { alert('Geolocalização não suportada.'); return; }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const ll = [pos.coords.latitude, pos.coords.longitude];
-          if (marcadorLocal) mapa.removeLayer(marcadorLocal);
-          marcadorLocal = L.marker(ll, { icon: criarIcone('📍') }).addTo(mapa)
-            .bindPopup('<div class="popup-titulo">📍 Você está aqui!</div>').openPopup();
-          mapa.flyTo(ll, 16);
-        },
-        () => alert('Não foi possível obter sua localização.')
-      );
-    }
-
-    // ============================================
-    // CRIAR ÍCONE EMOJI NO MAPA
-    // ============================================
-    function criarIcone(emoji) {
-      return L.divIcon({
-        html: `<div class="emoji-marker">${emoji}</div>`,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -16]
-      });
-    }
-
-    // ============================================
-    // DUPLO CLIQUE NO MAPA = CRIAR REPORT
-    // ============================================
-    mapa.on('dblclick', async e => {
-      latLngAtual = e.latlng;
-
-      // Preenche o endereço automaticamente
-      document.getElementById('enderecoReport').value = 'Detectando...';
-      document.getElementById('enderecoFav').value = 'Detectando...';
-      document.getElementById('tipoReport').value = '';
-      document.getElementById('descReport').value = '';
-      document.getElementById('previewFoto').style.display = 'none';
-
-      abrirModal('modalReport');
-
-      // Busca o endereço pelo GPS (geocodificação reversa)
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`,
-          { headers: { 'Accept-Language': 'pt-BR' } }
-        );
-        const data = await res.json();
-        const end = data.display_name || 'Endereço não encontrado';
-        document.getElementById('enderecoReport').value = end;
-        document.getElementById('enderecoFav').value = end;
-      } catch {
-        document.getElementById('enderecoReport').value = 'Endereço não encontrado';
-        document.getElementById('enderecoFav').value = 'Endereço não encontrado';
-      }
+  // Favoritos do usuário
+  if(filtrosAtivos.has('favorito')){
+    favoritos.forEach(f=>{
+      L.marker([f.lat,f.lng],{icon:icone(f.emoji)})
+        .bindPopup(`<div style="min-width:180px">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px">${f.emoji} ${f.nome}</div>
+          <div style="font-size:11px;color:#888;margin-bottom:8px">📍 ${f.end?f.end.split(',')[0]:''}</div>
+          <button onclick="deletarFav(${f.id})" style="width:100%;padding:7px;background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;font-size:13px;cursor:pointer;color:#c62828">🗑️ Remover favorito</button>
+        </div>`).addTo(camada);
     });
+  }
+}
 
-    // ============================================
-    // PREVIEW DA FOTO
-    // ============================================
-    function previewFoto(input) {
-      if (!input.files[0]) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = document.getElementById('previewFoto');
-        img.src = e.target.result;
-        img.style.display = 'block';
-      };
-      reader.readAsDataURL(input.files[0]);
-    }
+// ── BUSCA ──
+let timer=null;
+function buscarEnd(txt){
+  clearTimeout(timer);
+  const box=document.getElementById('searchResults');
+  if(txt.trim().length<3){box.classList.remove('ativo');return}
+  box.innerHTML='<div class="result-vazio">🔍 Buscando...</div>';
+  box.classList.add('ativo');
+  timer=setTimeout(async()=>{
+    try{
+      const q=encodeURIComponent(txt+', Saquarema, Rio de Janeiro, Brasil');
+      const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`,{headers:{'Accept-Language':'pt-BR'}});
+      const data=await res.json();
+      if(!data.length){box.innerHTML='<div class="result-vazio">Nenhum endereço encontrado.</div>';return}
+      box.innerHTML=data.map(i=>`<div class="result-item" onclick="irPara(${i.lat},${i.lon},'${i.display_name.replace(/'/g,"\\'")}')"><span style="font-size:18px">📍</span><div><div class="result-nome">${i.display_name.split(',')[0]}</div><div class="result-end">${i.display_name.split(',').slice(1,3).join(', ')}</div></div></div>`).join('');
+    }catch{box.innerHTML='<div class="result-vazio">Erro na busca.</div>'}
+  },600);
+}
+function irPara(lat,lon,nome){
+  document.getElementById('searchResults').classList.remove('ativo');
+  document.getElementById('searchInput').value=nome.split(',')[0];
+  if(marcadorBusca)mapa.removeLayer(marcadorBusca);
+  marcadorBusca=L.marker([lat,lon],{icon:icone('📍')}).addTo(mapa).bindPopup(`<div style="font-weight:700">📍 ${nome.split(',')[0]}</div>`).openPopup();
+  mapa.flyTo([lat,lon],17);
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))document.getElementById('searchResults').classList.remove('ativo')});
 
-    // ============================================
-    // SALVAR REPORT (envia para o servidor)
-    // ============================================
-    async function salvarReport() {
-      const tipo = document.getElementById('tipoReport').value;
-      if (!tipo) { alert('Selecione um tipo de ocorrência!'); return; }
+// ── MINHA LOCALIZAÇÃO ──
+let meuMarcador=null;
+function minhaLoc(){
+  if(!navigator.geolocation){alert('Geolocalização não suportada.');return}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const ll=[pos.coords.latitude,pos.coords.longitude];
+    if(meuMarcador)mapa.removeLayer(meuMarcador);
+    meuMarcador=L.marker(ll,{icon:icone('📍')}).addTo(mapa).bindPopup('<div style="font-weight:700">📍 Você está aqui!</div>').openPopup();
+    mapa.flyTo(ll,16);
+  },()=>alert('Não foi possível obter sua localização.'));
+}
 
-      const payload = {
-        lat: latLngAtual.lat,
-        lng: latLngAtual.lng,
-        tipo: tipo,
-        endereco: document.getElementById('enderecoReport').value,
-        descricao: document.getElementById('descReport').value
-      };
+// ── DUPLO CLIQUE = NOVO REPORT ──
+mapa.on('dblclick',async e=>{
+  latLngAtual=e.latlng;
+  document.getElementById('endReport').value='Detectando...';
+  document.getElementById('endFav').value='Detectando...';
+  document.getElementById('tipoReport').value='';
+  document.getElementById('descReport').value='';
+  document.getElementById('prevImg').style.display='none';
+  abrirModal('modalReport');
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`,{headers:{'Accept-Language':'pt-BR'}});
+    const d=await res.json();
+    document.getElementById('endReport').value=d.display_name||'Endereço não encontrado';
+    document.getElementById('endFav').value=d.display_name||'';
+  }catch{document.getElementById('endReport').value='Endereço não encontrado'}
+});
 
-      // Converte foto para base64 se tiver
-      const fotoInput = document.getElementById('fotoReport');
-      if (fotoInput.files[0]) {
-        payload.imagem_base64 = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => res(e.target.result);
-          r.readAsDataURL(fotoInput.files[0]);
-        });
-      }
+function prevFoto(input){
+  if(!input.files[0])return;
+  const r=new FileReader();
+  r.onload=e=>{const img=document.getElementById('prevImg');img.src=e.target.result;img.style.display='block'};
+  r.readAsDataURL(input.files[0]);
+}
 
-      try {
-        await fetch('/api/relatorios', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        fecharModal('modalReport');
-        await carregarReports();
-        alert('✅ Report enviado! Obrigado por contribuir!');
-      } catch {
-        // Se o servidor estiver offline, mostra no mapa mesmo assim
-        reports.push({ ...payload, id: Date.now(), timestamp: new Date().toISOString() });
-        renderizarMarcadores();
-        fecharModal('modalReport');
-        alert('✅ Report salvo localmente!');
-      }
-    }
+// ── SALVAR REPORT ──
+async function salvarReport(){
+  const tipo=document.getElementById('tipoReport').value;
+  if(!tipo){alert('Selecione um tipo!');return}
+  const r={id:Date.now(),tipo,lat:latLngAtual.lat,lng:latLngAtual.lng,end:document.getElementById('endReport').value,desc:document.getElementById('descReport').value};
+  const fi=document.getElementById('fotoReport');
+  if(fi.files[0])r.foto=await new Promise(res=>{const rd=new FileReader();rd.onload=e=>res(e.target.result);rd.readAsDataURL(fi.files[0])});
+  try{await fetch('/api/relatorios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(r)})}catch{}
+  reports.push(r);renderizar();fecharModal('modalReport');alert('✅ Report enviado! Obrigado!');
+}
 
-    // ============================================
-    // FAVORITOS (salvos no dispositivo)
-    // ============================================
-    function carregarFavoritos() {
-      favoritos = JSON.parse(localStorage.getItem('saquanav-favoritos') || '[]');
-      renderizarFavoritos();
-    }
+// ── FAVORITOS ──
+function salvarFav(){
+  const nome=document.getElementById('nomeFav').value.trim()||'Meu local';
+  const f={id:Date.now(),emoji:document.getElementById('emojiFav').value,nome,end:document.getElementById('endFav').value,lat:latLngAtual.lat,lng:latLngAtual.lng};
+  favoritos.push(f);localStorage.setItem('saquanav-favs',JSON.stringify(favoritos));
+  renderizarFavs();renderizar();fecharModal('modalFav');alert('❤️ Salvo!');
+}
+function deletarFav(id){
+  if(!confirm('Remover favorito?'))return;
+  favoritos=favoritos.filter(f=>f.id!==id);
+  localStorage.setItem('saquanav-favs',JSON.stringify(favoritos));
+  renderizarFavs();renderizar();mapa.closePopup();
+}
+function renderizarFavs(){
+  const el=document.getElementById('listaFavs');
+  if(!favoritos.length){el.innerHTML='<div class="vazio">Nenhum favorito ainda.<br>Toque 2x no mapa para salvar!</div>';return}
+  el.innerHTML=favoritos.map(f=>`<div class="fav-card" onclick="irParaFav(${f.lat},${f.lng})"><span class="fav-emoji">${f.emoji}</span><div style="flex:1"><div class="fav-nome">${f.nome}</div><div class="fav-end">${f.end?f.end.split(',')[0]:''}</div></div><button class="btn-del" onclick="event.stopPropagation();deletarFav(${f.id})">🗑️</button></div>`).join('');
+}
+function irParaFav(lat,lng){fecharPainel('painelFavoritos');mapa.flyTo([lat,lng],17)}
+function abrirFavDoMapa(lat,lng,end,nome){latLngAtual={lat,lng};document.getElementById('endFav').value=end;document.getElementById('nomeFav').value=nome;mapa.closePopup();abrirModal('modalFav')}
 
-    function salvarFavorito() {
-      const nome = document.getElementById('nomeFav').value.trim() || 'Meu local';
-      const fav = {
-        id: Date.now(),
-        emoji: document.getElementById('emojiFav').value,
-        nome: nome,
-        endereco: document.getElementById('enderecoFav').value,
-        lat: latLngAtual.lat,
-        lng: latLngAtual.lng
-      };
-      favoritos.push(fav);
-      localStorage.setItem('saquanav-favoritos', JSON.stringify(favoritos));
-      fecharModal('modalFavorito');
-      renderizarFavoritos();
-      renderizarMarcadores();
-      alert('❤️ Favorito salvo!');
-    }
+// ── FILTROS ──
+function filtrar(btn,tipo){btn.classList.toggle('off');if(filtrosAtivos.has(tipo))filtrosAtivos.delete(tipo);else filtrosAtivos.add(tipo);renderizar()}
 
-    function deletarFavorito(id) {
-      if (!confirm('Remover este favorito?')) return;
-      favoritos = favoritos.filter(f => f.id !== id);
-      localStorage.setItem('saquanav-favoritos', JSON.stringify(favoritos));
-      renderizarFavoritos();
-      renderizarMarcadores();
-    }
+// ── ABAS / MODAIS / PAINÉIS ──
+function setTab(el,aba){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('ativo'));el.classList.add('ativo');if(aba==='favoritos')abrirPainel('painelFavoritos');else if(aba==='sobre')abrirPainel('painelSobre')}
+function abrirModal(id){document.getElementById(id).classList.add('ativo')}
+function fecharModal(id){document.getElementById(id).classList.remove('ativo')}
+function abrirPainel(id){document.getElementById(id).classList.add('ativo')}
+function fecharPainel(id){document.getElementById(id).classList.remove('ativo');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('ativo'));document.querySelector('.tab').classList.add('ativo')}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('ativo')}));
 
-    function renderizarFavoritos() {
-      const lista = document.getElementById('listaFavoritos');
-      if (!favoritos.length) {
-        lista.innerHTML = '<div class="vazio-msg">Você ainda não tem favoritos.<br>Toque duas vezes no mapa e salve um local!</div>';
-        return;
-      }
-      lista.innerHTML = favoritos.map(f => `
-        <div class="fav-card" onclick="irParaFav(${f.lat}, ${f.lng})">
-          <span class="fav-emoji">${f.emoji}</span>
-          <div class="fav-info">
-            <div class="fav-nome">${f.nome}</div>
-            <div class="fav-end">${f.endereco ? f.endereco.split(',')[0] : ''}</div>
-          </div>
-          <button class="btn-del-fav" onclick="event.stopPropagation();deletarFavorito(${f.id})">🗑️</button>
-        </div>
-      `).join('');
-    }
+// Dica que some
+setTimeout(()=>{const d=document.getElementById('dica');if(d){d.style.opacity='0';setTimeout(()=>d.remove(),500)}},4000);
 
-    function irParaFav(lat, lng) {
-      fecharPainel('painelFavoritos');
-      mapa.flyTo([lat, lng], 17);
-    }
-
-    // ============================================
-    // CARREGAR REPORTS DO SERVIDOR
-    // ============================================
-    async function carregarReports() {
-      try {
-        const res = await fetch('/api/relatorios');
-        reports = await res.json();
-      } catch {
-        // Sem servidor: usa dados de exemplo
-        reports = [
-          { id:1, tipo:'transito', lat:-22.928, lng:-42.492, endereco:'Av. Salgado Filho', descricao:'Congestionamento na ponte', timestamp: new Date().toISOString() },
-          { id:2, tipo:'buraco',   lat:-22.930, lng:-42.488, endereco:'Rua dos Mariscos', descricao:'Buraco grande! Cuidado!', timestamp: new Date().toISOString() },
-          { id:3, tipo:'restaurante', lat:-22.926, lng:-42.495, endereco:'Rua da Praia', descricao:'Restaurante Peixe do Gustavo — ótimo fruto do mar! 🐟', timestamp: new Date().toISOString() },
-          { id:4, tipo:'obras',    lat:-22.932, lng:-42.490, endereco:'RJ-102, km 4', descricao:'Obras de recapeamento', timestamp: new Date().toISOString() }
-        ];
-      }
-      renderizarMarcadores();
-    }
-
-    // ============================================
-    // RENDERIZAR MARCADORES NO MAPA
-    // ============================================
-    function renderizarMarcadores() {
-      camada.clearLayers();
-
-      // Reports do servidor
-      reports.forEach(r => {
-        if (!filtrosAtivos.has(r.tipo)) return;
-        const emoji = EMOJIS[r.tipo] || '📌';
-        const m = L.marker([r.lat, r.lng], { icon: criarIcone(emoji) });
-        const data = new Date(r.timestamp).toLocaleString('pt-BR');
-        const fotoHtml = r.imagem_base64
-          ? `<img src="${r.imagem_base64}" class="popup-foto">`
-          : '';
-        m.bindPopup(`
-          <div style="min-width:200px">
-            <div class="popup-titulo">${emoji} ${r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1)}</div>
-            <div class="popup-sub">📍 ${r.endereco || ''}</div>
-            ${fotoHtml}
-            ${r.descricao ? `<div class="popup-desc">${r.descricao}</div>` : ''}
-            <div class="popup-data">${data}</div>
-            <button class="popup-btn-fav" onclick="abrirFavoritoDoMapa(${r.lat},${r.lng},'${(r.endereco||'').replace(/'/g,"\\'")}')">❤️ Salvar nos favoritos</button>
-          </div>
-        `);
-        camada.addLayer(m);
-      });
-
-      // Favoritos do usuário
-      if (filtrosAtivos.has('favorito')) {
-        favoritos.forEach(f => {
-          const m = L.marker([f.lat, f.lng], { icon: criarIcone(f.emoji) });
-          m.bindPopup(`
-            <div style="min-width:180px">
-              <div class="popup-titulo">${f.emoji} ${f.nome}</div>
-              <div class="popup-sub">📍 ${f.endereco ? f.endereco.split(',')[0] : ''}</div>
-              <button class="popup-btn-fav" onclick="deletarFavorito(${f.id})">🗑️ Remover favorito</button>
-            </div>
-          `);
-          camada.addLayer(m);
-        });
-      }
-    }
-
-    // Abre modal de favorito com dados já preenchidos (do popup)
-    function abrirFavoritoDoMapa(lat, lng, endereco) {
-      latLngAtual = { lat, lng };
-      document.getElementById('enderecoFav').value = endereco;
-      document.getElementById('nomeFav').value = '';
-      mapa.closePopup();
-      abrirModal('modalFavorito');
-    }
-
-    // ============================================
-    // FILTROS
-    // ============================================
-    function alternarFiltro(btn, tipo) {
-      btn.classList.toggle('off');
-      if (filtrosAtivos.has(tipo)) filtrosAtivos.delete(tipo);
-      else filtrosAtivos.add(tipo);
-      renderizarMarcadores();
-    }
-
-    // ============================================
-    // ABAS
-    // ============================================
-    function setTab(el, aba) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
-      el.classList.add('ativo');
-      if (aba === 'favoritos') abrirPainel('painelFavoritos');
-      else if (aba === 'filtros') abrirPainel('painelFiltros');
-      else if (aba === 'sobre') abrirPainel('painelSobre');
-    }
-
-    // ============================================
-    // ABRIR/FECHAR MODAIS E PAINÉIS
-    // ============================================
-    function abrirModal(id) { document.getElementById(id).classList.add('ativo'); }
-    function fecharModal(id) { document.getElementById(id).classList.remove('ativo'); }
-    function abrirPainel(id) { document.getElementById(id).classList.add('ativo'); }
-    function fecharPainel(id) {
-      document.getElementById(id).classList.remove('ativo');
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
-      document.querySelector('.tab').classList.add('ativo');
-    }
-
-    // Fecha modal ao clicar no fundo
-    document.querySelectorAll('.modal-bg').forEach(m => {
-      m.addEventListener('click', e => {
-        if (e.target === m) m.classList.remove('ativo');
-      });
-    });
-
-    // ============================================
-    // DICA INICIAL (some depois de 4 segundos)
-    // ============================================
-    setTimeout(() => {
-      const dica = document.getElementById('dica');
-      dica.style.opacity = '0';
-      setTimeout(() => dica.remove(), 500);
-    }, 4000);
-
-    // ============================================
-    // INICIAR APP
-    // ============================================
-    carregarReports();
-    carregarFavoritos();
-  </script>
+renderizar();
+renderizarFavs();
+</script>
 </body>
 </html>
