@@ -613,23 +613,30 @@
     try {
       const res = await fetch('/api/relatorios');
       reports   = await res.json();
+      renderizarReports();
+      atualizarStats();
     } catch {
-      // Dados de exemplo enquanto não tem servidor
       reports = [
-        { id:1,  tipo:'buraco',   lat:-22.9355, lng:-42.5010, endereco:'Av. Nossa Sra. de Nazaré, nº 120',        descricao:'Buraco enorme na pista!',                  timestamp: new Date().toISOString(), status:'pendente' },
-        { id:2,  tipo:'transito', lat:-22.9385, lng:-42.4965, endereco:'RJ-102 – Av. Oceânica, próx. Praça',      descricao:'Trânsito lento, semáforo quebrado',         timestamp: new Date().toISOString(), status:'pendente' },
-        { id:3,  tipo:'evento',   lat:-22.9405, lng:-42.4980, endereco:'Praia de Itaúna – Av. Oceânica',          descricao:'Campeonato de surfe esse fim de semana!',   timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:4,  tipo:'obras',    lat:-22.9298, lng:-42.4825, endereco:'RJ-128, saída Porto Novo',                descricao:'Obras de recapeamento – faixa bloqueada',   timestamp: new Date().toISOString(), status:'pendente' },
-        { id:5,  tipo:'acidente', lat:-22.9368, lng:-42.5042, endereco:'Av. Salgado Filho c/ Av. Oito de Maio',   descricao:'Acidente entre carro e moto, devagar',      timestamp: new Date().toISOString(), status:'pendente' },
-        { id:6,  tipo:'buraco',   lat:-22.9330, lng:-42.5055, endereco:'Rua Barão de Saquarema, nº 80',           descricao:'Vários buracos após a chuva',               timestamp: new Date().toISOString(), status:'pendente' },
-        { id:7,  tipo:'transito', lat:-22.9310, lng:-42.4840, endereco:'Estrada dos Leigos – RJ-128',             descricao:'Congestionamento na saída da cidade',        timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:8,  tipo:'obras',    lat:-22.9345, lng:-42.4890, endereco:'Rua dos Mariscos – bairro Itaúna',        descricao:'Troca de tubulação – via semi-bloqueada',   timestamp: new Date().toISOString(), status:'aprovado' },
-        { id:9,  tipo:'acidente', lat:-22.9420, lng:-42.4945, endereco:'RJ-102 km 3 – próx. Praia de Itaúna',    descricao:'Colisão traseira, aguardar guincho',         timestamp: new Date().toISOString(), status:'pendente' },
-        { id:10, tipo:'evento',   lat:-22.9322, lng:-42.4802, endereco:'Praça de Porto Novo',                     descricao:'Festa junina – sábado à noite',             timestamp: new Date().toISOString(), status:'aprovado' }
+        { id:1,  tipo:'transito', lat:-22.930798, lng:-42.490139, endereco:'Via local',  descricao:'Trânsito lento',                 timestamp: new Date().toISOString(), status:'pendente' },
+        { id:2,  tipo:'transito', lat:-22.933871, lng:-42.499419, endereco:'Via local',  descricao:'Trânsito parado',                timestamp: new Date().toISOString(), status:'pendente' },
+        { id:3,  tipo:'buraco',   lat:-22.928672, lng:-42.511251, endereco:'Via local',  descricao:'Buraco na via, cuidado!',        timestamp: new Date().toISOString(), status:'pendente' },
+        { id:4,  tipo:'evento',   lat:-22.931930, lng:-42.500200, endereco:'Via local',  descricao:'Evento na região',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:5,  tipo:'obras',    lat:-22.932960, lng:-42.489920, endereco:'Via local',  descricao:'Obras – faixa bloqueada',        timestamp: new Date().toISOString(), status:'pendente' },
+        { id:6,  tipo:'acidente', lat:-22.924090, lng:-42.482890, endereco:'Via local',  descricao:'Acidente registrado',            timestamp: new Date().toISOString(), status:'pendente' },
+        { id:7,  tipo:'transito', lat:-22.930240, lng:-42.484770, endereco:'Via local',  descricao:'Congestionamento',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:8,  tipo:'evento',   lat:-22.934370, lng:-42.490680, endereco:'Via local',  descricao:'Evento na região',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:9,  tipo:'obras',    lat:-22.932814, lng:-42.500567, endereco:'Via local',  descricao:'Obras em andamento',             timestamp: new Date().toISOString(), status:'pendente' },
+        { id:10, tipo:'transito', lat:-22.895044, lng:-42.470977, endereco:'Via local',  descricao:'Trânsito congestionado',         timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:11, tipo:'transito', lat:-22.893226, lng:-42.470301, endereco:'Via local',  descricao:'Trânsito lento',                 timestamp: new Date().toISOString(), status:'pendente' },
+        { id:12, tipo:'evento',   lat:-22.905555, lng:-42.475441, endereco:'Via local',  descricao:'Evento na região',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:13, tipo:'evento',   lat:-22.895244, lng:-42.471117, endereco:'Via local',  descricao:'Evento na região',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:14, tipo:'evento',   lat:-22.935344, lng:-42.483208, endereco:'Via local',  descricao:'Evento na região',               timestamp: new Date().toISOString(), status:'aprovado' },
+        { id:15, tipo:'transito', lat:-22.927291, lng:-42.479866, endereco:'Via local',  descricao:'Trânsito lento',                 timestamp: new Date().toISOString(), status:'pendente' },
+        { id:16, tipo:'buraco',   lat:-22.926480, lng:-42.504710, endereco:'Via local',  descricao:'Buracos na via!',                timestamp: new Date().toISOString(), status:'pendente' }
       ];
+      renderizarReports();
+      atualizarStats();
     }
-    renderizarReports();
-    atualizarStats();
   }
 
   // ---- MOSTRAR REPORTS NA LISTA E NO MAPA ----
