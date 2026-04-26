@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SaquaNav Admin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root {
+  --bg:     #f4f6fa;
+  --navbar: #0b1b2b;
+  --card:   #ffffff;
+  --input:  #f0f2f5;
+  --text:   #0b1b2b;
+  --text2:  #666;
+  --muted:  #aaa;
+  --border: #e0e4ea;
+  --accent: #1a73e8;
+  --danger: #e53935;
+  --ok:     #2e7d32;
+  --warn:   #f57c00;
+}
+body.dark {
+  --bg:     #0a0a1a;
+  --navbar: #060610;
+  --card:   #12122a;
+  --input:  #1a1a35;
+  --text:   #e8eaff;
+  --text2:  #8888bb;
+  --muted:  #4444aa;
+  --border: #22224a;
+  --accent: #4da6ff;
+  --danger: #ff5252;
+  --ok:     #69f0ae;
+  --warn:   #ffb74d;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+
+/* ── TELA DE LOGIN ── */
+.tela-login {
+  position: fixed;
+  inset: 0;
+  background: var(--navbar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 32px;
+}
+
+.login-logo img {
+  height: 36px;
+  width: auto;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.login-sub {
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  margin-bottom: 40px;
+}
+
+.login-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.login-titulo {
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-campo {
+  width: 100%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 12px;
+}
+.login-campo::placeholder { color: rgba(255,255,255,0.4); }
+.login-campo:focus { border-color: #4da6ff; }
+
+.btn-login {
+  width: 100%;
+  background: #4da6ff;
+  color: #0b1b2b;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.login-erro {
+  color: #ff5252;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 10px;
+  display: none;
+}
+
+/* ── NAVBAR ── */
+.navbar {
+  background: var(--navbar);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo img { height: 24px; width: auto; display: block; }
+.logo-badge {
+  background: #4da6ff;
+  color: #0b1b2b;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.navbar-btns { display: flex; gap: 6px; align-items: center; }
+
+.btn-nav {
+  background: white;
+  color: #0b1b2b;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-theme {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── LAYOUT PRINCIPAL ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── MAPA ── */
+#mapa {
+  flex: 1;
+  height: 100%;
+}
+
+body.dark .leaflet-tile {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+.emoji-marker { font-size: 26px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); }
+
+.leaflet-popup-content-wrapper {
+  border-radius: 14px !important;
+  background: var(--card) !important;
+}
+.leaflet-popup-tip { background: var(--card) !important; }
+.leaflet-popup-content { color: var(--text) !important; margin: 12px 14px !important; }
+
+/* ── PAINEL LATERAL ── */
+.sidebar {
+  width: 320px;
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+/* Em mobile, o sidebar fica em baixo */
+@media (max-width: 700px) {
+  .main { flex-direction: column; }
+  .sidebar { width: 100%; height: 55%; border-left: none; border-top: 1px solid var(--border); }
+  #mapa { height: 45%; flex: none; }
+}
+
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.stab {
+  flex: 1;
+  padding: 12px 6px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.stab.ativo { color: var(--accent); border-bottom-color: var(--accent); }
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* ── CARDS DE REPORTS ── */
+.report-card {
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.report-tipo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.badge-pendente { background: #fff3e0; color: #e65100; }
+.badge-aprovado { background: #e8f5e9; color: #2e7d32; }
+.badge-recusado { background: #ffebee; color: #c62828; }
+
+body.dark .badge-pendente { background: #3d2800; color: #ffb74d; }
+body.dark .badge-aprovado { background: #003300; color: #69f0ae; }
+body.dark .badge-recusado { background: #3d0000; color: #ff5252; }
+
+.report-end {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.report-desc {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.report-data {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.report-acoes {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-aprovar, .btn-recusar, .btn-deletar, .btn-ir {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-aprovar { background: #e8f5e9; color: #2e7d32; }
+.btn-recusar { background: #fff3e0; color: #e65100; }
+.btn-deletar { background: #ffebee; color: #c62828; }
+.btn-ir { background: var(--input); color: var(--text2); border: 1px solid var(--border); }
+
+body.dark .btn-aprovar { background: #003300; color: #69f0ae; }
+body.dark .btn-recusar { background: #3d2800; color: #ffb74d; }
+body.dark .btn-deletar { background: #3d0000; color: #ff5252; }
+
+/* ── CARDS DE LOCAIS ── */
+.local-card {
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.local-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.local-emoji { font-size: 28px; }
+.local-nome { font-size: 14px; font-weight: 700; color: var(--text); }
+.local-end { font-size: 11px; color: var(--muted); }
+.local-desc { font-size: 12px; color: var(--text2); margin: 6px 0 8px; }
+.local-acoes { display: flex; gap: 6px; }
+
+/* ── FORMULÁRIO DE NOVO LOCAL ── */
+.campo-label {
+  font-size: 11px; color: var(--muted);
+  font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 4px; display: block;
+}
+
+.campo {
+  width: 100%;
+  background: var(--input);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  margin-bottom: 10px;
+}
+.campo:focus { border-color: var(--accent); }
+.campo::placeholder { color: var(--muted); }
+textarea.campo { height: 60px; resize: none; }
+
+.btn-primario {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* ── STATS ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.stat-card {
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.vazio { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 0; }
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none; align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+}
+.modal-bg.ativo { display: flex; }
+
+.modal-box {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 20px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-titulo {
+  font-size: 16px; font-weight: 700;
+  color: var(--text); margin-bottom: 16px;
+}
+
+.modal-btns { display: flex; gap: 8px; margin-top: 6px; }
+.modal-btns button { flex: 1; }
+
+.btn-secundario {
+  background: var(--input);
+  color: var(--text2);
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     TELA DE LOGIN
+============================================= -->
+<div class="tela-login" id="telaLogin">
+  <div class="login-logo"><img src="logo.png" alt="SaquaNav"></div>
+  <div class="login-sub">Painel Administrativo</div>
+
+  <div class="login-card">
+    <div class="login-titulo">🔐 Entrar como Admin</div>
+    <input class="login-campo" id="loginUsuario" type="text" placeholder="Usuário" autocomplete="off">
+    <input class="login-campo" id="loginSenha" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')fazerLogin()">
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="login-erro" id="loginErro">❌ Usuário ou senha incorretos.</div>
+  </div>
+
+  <div style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:20px;">
+    Demo: usuário <strong style="color:rgba(255,255,255,0.6)">admin</strong> • senha <strong style="color:rgba(255,255,255,0.6)">saqua123</strong>
+  </div>
+</div>
+
+<!-- ============================================
+     NAVBAR
+============================================= -->
+<div class="navbar">
+  <div class="logo">
+    <img src="logo.png" alt="SaquaNav">
+    <span class="logo-badge">ADMIN</span>
+  </div>
+  <div class="navbar-btns">
+    <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
+    <button class="btn-nav" onclick="abrirModal('modalNovoLocal')">➕ Novo Local</button>
+    <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
+  </div>
+</div>
+
+<!-- ============================================
+     CONTEÚDO PRINCIPAL
+============================================= -->
+<div class="main">
+
+  <!-- Mapa -->
+  <div id="mapa"></div>
+
+  <!-- Painel lateral -->
+  <div class="sidebar">
+
+    <!-- Abas -->
+    <div class="sidebar-tabs">
+      <div class="stab ativo" onclick="setStab(this,'reports')">📋 Reports</div>
+      <div class="stab" onclick="setStab(this,'locais')">📍 Locais</div>
+      <div class="stab" onclick="setStab(this,'stats')">📊 Stats</div>
+    </div>
+
+    <!-- Aba: Reports dos usuários -->
+    <div class="sidebar-body" id="tab-reports">
+      <div id="listaReports">
+        <div class="vazio">Carregando reports...</div>
+      </div>
+    </div>
+
+    <!-- Aba: Locais fixos (restaurantes, pontos turísticos, etc) -->
+    <div class="sidebar-body" id="tab-locais" style="display:none">
+      <div id="listaLocais">
+        <div class="vazio">Carregando locais...</div>
+      </div>
+    </div>
+
+    <!-- Aba: Estatísticas -->
+    <div class="sidebar-body" id="tab-stats" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">Total de reports</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-pendentes" style="color:var(--warn)">0</div>
+          <div class="stat-label">Pendentes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-aprovados" style="color:var(--ok)">0</div>
+          <div class="stat-label">Aprovados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-locais">0</div>
+          <div class="stat-label">Locais cadastrados</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+        <strong style="color:var(--text)">Tipos mais reportados:</strong>
+        <div id="stats-tipos"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: ADICIONAR NOVO LOCAL FIXO
+============================================= -->
+<div class="modal-bg" id="modalNovoLocal">
+  <div class="modal-box">
+    <div class="modal-titulo">➕ Adicionar Local</div>
+
+    <label class="campo-label">Tipo de local</label>
+    <select class="campo" id="tipoNovoLocal">
+      <option value="restaurante">🍽️ Restaurante</option>
+      <option value="praia">🏖️ Praia / Ponto turístico</option>
+      <option value="comercio">🏪 Comércio</option>
+      <option value="saude">🏥 Hospital / Clínica</option>
+      <option value="escola">🏫 Escola / Universidade</option>
+      <option value="religioso">⛪ Igreja / Templo</option>
+      <option value="esporte">⚽ Esporte / Lazer</option>
+      <option value="fixo">📌 Ponto de referência</option>
+    </select>
+
+    <label class="campo-label">Nome do local</label>
+    <input class="campo" id="nomeNovoLocal" type="text" placeholder="Ex: Restaurante Peixe do Gustavo">
+
+    <label class="campo-label">Descrição</label>
+    <textarea class="campo" id="descNovoLocal" placeholder="Ex: Especialidade em frutos do mar, vista para a lagoa"></textarea>
+
+    <label class="campo-label">Endereço</label>
+    <input class="campo" id="endNovoLocal" type="text" placeholder="Ex: Rua da Praia, 123 - Saquarema">
+
+    <label class="campo-label">Latitude</label>
+    <input class="campo" id="latNovoLocal" type="number" step="any" placeholder="-22.928393">
+
+    <label class="campo-label">Longitude</label>
+    <input class="campo" id="lngNovoLocal" type="number" step="any" placeholder="-42.491531">
+
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
+      💡 Dica: você também pode clicar no mapa para pegar as coordenadas automaticamente!
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-primario" onclick="salvarLocal()">💾 Salvar</button>
+      <button class="btn-secundario" onclick="fecharModal('modalNovoLocal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // ============================================
+  // LOGIN
+  // Usuário: admin | Senha: saqua123
+  // (Em um projeto real, isso seria verificado no servidor!)
+  // ============================================
+  const ADMIN_USER = 'admin';
+  const ADMIN_SENHA = 'saqua123';
+
+  function fazerLogin() {
+    const u = document.getElementById('loginUsuario').value;
+    const s = document.getElementById('loginSenha').value;
+    const erro = document.getElementById('loginErro');
+
+    if (u === ADMIN_USER && s === ADMIN_SENHA) {
+      document.getElementById('telaLogin').style.display = 'none';
+      iniciarApp();
+    } else {
+      erro.style.display = 'block';
+      setTimeout(() => erro.style.display = 'none', 3000);
+    }
+  }
+
+  // ============================================
+  // TEMA
+  // ============================================
+  let isDark = localStorage.getItem('tema-admin') === 'dark';
+
+  function aplicarTema() {
+    document.body.classList.toggle('dark', isDark);
+    document.getElementById('btnTema').textContent = isDark ? '☀️' : '🌙';
+  }
+
+  function alternarTema() {
+    isDark = !isDark;
+    localStorage.setItem('tema-admin', isDark ? 'dark' : 'light');
+    aplicarTema();
+  }
+
+  aplicarTema();
+
+  // ============================================
+  // MAPA
+  // ============================================
+  const CENTRO = [-22.928393, -42.491531];
+  let mapa;
+  const EMOJIS = {
+    transito:'🚗', acidente:'🚨', obras:'🚧', buraco:'⚠️',
+    evento:'🎉', alagamento:'🌊', restaurante:'🍽️', praia:'🏖️',
+    comercio:'🏪', saude:'🏥', escola:'🏫', religioso:'⛪',
+    esporte:'⚽', fixo:'📌', outro:'📌'
+  };
+
+  function criarIcone(emoji) {
+    return L.divIcon({
+      html: `<div class="emoji-marker">${emoji}</div>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
+    });
+  }
+
+  // ============================================
+  // DADOS
+  // ============================================
+  let reports = [];
+  let locais  = JSON.parse(localStorage.getItem('saquanav-locais') || '[]');
+  let camadaReports, camadaLocais;
+  let marcadorLocal = null;
+
+  // Se não tiver locais, adiciona exemplos
+  if (!locais.length) {
+    locais = [
+      { id:1, tipo:'restaurante', nome:'Restaurante Peixe do Gustavo', desc:'Especialidade em frutos do mar! 🐟', end:'Rua da Praia, 45 - Itaúna', lat:-22.9268, lng:-42.4948 },
+      { id:2, tipo:'praia',       nome:'Praia de Itaúna', desc:'Famosa pelas ondas para surfe 🏄', end:'Av. Oceânica - Itaúna', lat:-22.9302, lng:-42.4880 },
+      { id:3, tipo:'religioso',   nome:'Igreja N.S. de Nazareth', desc:'Marco histórico de Saquarema ⛪', end:'Largo da Igreja, S/N', lat:-22.9284, lng:-42.4915 }
+    ];
+    localStorage.setItem('saquanav-locais', JSON.stringify(locais));
+  }
+
+  // ============================================
+  // INICIAR APP (depois do login)
+  // ============================================
+  function iniciarApp() {
+    mapa = L.map('mapa', { doubleClickZoom: false }).setView(CENTRO, 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(mapa);
+
+    camadaReports = L.layerGroup().addTo(mapa);
+    camadaLocais  = L.layerGroup().addTo(mapa);
+
+    // Clique simples = pega coordenadas para o modal
+    mapa.on('click', e => {
+      document.getElementById('latNovoLocal').value = e.latlng.lat.toFixed(6);
+      document.getElementById('lngNovoLocal').value = e.latlng.lng.toFixed(6);
+    });
+
+    carregarReports();
+    renderizarLocais();
+    atualizarStats();
+  }
+
+  // ============================================
+  // REPORTS
+  // ============================================
+  async function carregarReports() {
+    try {
+      const res = await fetch('/api/relatorios');
+      reports = await res.json();
+    } catch {
+      // Dados de exemplo se o servidor estiver offline
+      reports = [
+        { id:1, tipo:'buraco',   lat:-22.930, lng:-42.488, endereco:'Rua dos Mariscos', descricao:'Buraco enorme!', timestamp: new Date().toISOString(), status:'pendente' },
+        { id:2, tipo:'transito', lat:-22.928, lng:-42.492, endereco:'Av. Salgado Filho', descricao:'Trânsito parado na ponte', timestamp: new Date().toISOString(), status:'pendente' },
+        { id:3, tipo:'evento',   lat:-22.926, lng:-42.495, endereco:'Praia de Saquarema', descricao:'Show na praia essa sexta!', timestamp: new Date().toISOString(), status:'aprovado' }
+      ];
+    }
+    renderizarReports();
+    atualizarStats();
+  }
+
+  function renderizarReports() {
+    const lista = document.getElementById('listaReports');
+    camadaReports.clearLayers();
+
+    if (!reports.length) {
+      lista.innerHTML = '<div class="vazio">Nenhum report ainda.</div>';
+      return;
+    }
+
+    lista.innerHTML = reports.map(r => {
+      const emoji = EMOJIS[r.tipo] || '📌';
+      const status = r.status || 'pendente';
+      const data = new Date(r.timestamp).toLocaleString('pt-BR');
+      return `
+        <div class="report-card" id="card-${r.id}">
+          <div class="report-header">
+            <div class="report-tipo">${emoji} ${r.tipo}</div>
+            <span class="badge badge-${status}">${status}</span>
+          </div>
+          <div class="report-end">📍 ${r.endereco || 'Sem endereço'}</div>
+          ${r.descricao ? `<div class="report-desc">${r.descricao}</div>` : ''}
+          <div class="report-data">🕐 ${data}</div>
+          <div class="report-acoes">
+            <button class="btn-ir" onclick="irPara(${r.lat},${r.lng})">🗺️ Ver</button>
+            <button class="btn-aprovar" onclick="aprovarReport(${r.id})">✅ Aprovar</button>
+            <button class="btn-recusar" onclick="recusarReport(${r.id})">❌ Recusar</button>
+            <button class="btn-deletar" onclick="deletarReport(${r.id})">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Mostra reports no mapa
+    reports.forEach(r => {
+      if (r.status === 'recusado') return;
+      const emoji = EMOJIS[r.tipo] || '📌';
+      const m = L.marker([r.lat, r.lng], { icon: criarIcone(emoji) });
+      m.bindPopup(`
+        <div style="min-width:180px">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${emoji} ${r.tipo}</div>
+          <div style="font-size:11px;color:var(--muted)">📍 ${r.endereco || ''}</div>
+          ${r.descricao ? `<div style="font-size:12px;margin-top:6px">${r.descricao}</div>` : ''}
+        </div>
+      `);
+      camadaReports.addLayer(m);
+    });
+  }
+
+  function aprovarReport(id) {
+    reports = reports.map(r => r.id === id ? {...r, status:'aprovado'} : r);
+    renderizarReports();
+    atualizarStats();
+  }
+
+  function recusarReport(id) {
+    reports = reports.map(r => r.id === id ? {...r, status:'recusado'} : r);
+    renderizarReports();
+    atualizarStats();
+  }
+
+  function deletarReport(id) {
+    if (!confirm('Deletar este report?')) return;
+    reports = reports.filter(r => r.id !== id);
+    renderizarReports();
+    atualizarStats();
+  }
+
+  // ============================================
+  // LOCAIS FIXOS
+  // ============================================
+  function renderizarLocais() {
+    const lista = document.getElementById('listaLocais');
+    camadaLocais.clearLayers();
+
+    if (!locais.length) {
+      lista.innerHTML = '<div class="vazio">Nenhum local cadastrado.</div>';
+      return;
+    }
+
+    lista.innerHTML = locais.map(l => `
+      <div class="local-card">
+        <div class="local-header">
+          <span class="local-emoji">${EMOJIS[l.tipo] || '📌'}</span>
+          <div>
+            <div class="local-nome">${l.nome}</div>
+            <div class="local-end">📍 ${l.end}</div>
+          </div>
+        </div>
+        ${l.desc ? `<div class="local-desc">${l.desc}</div>` : ''}
+        <div class="local-acoes">
+          <button class="btn-ir" onclick="irPara(${l.lat},${l.lng})">🗺️ Ver</button>
+          <button class="btn-deletar" style="flex:0.4" onclick="deletarLocal(${l.id})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Mostra locais no mapa
+    locais.forEach(l => {
+      const emoji = EMOJIS[l.tipo] || '📌';
+      const m = L.marker([l.lat, l.lng], { icon: criarIcone(emoji) });
+      m.bindPopup(`
+        <div style="min-width:180px">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${emoji} ${l.nome}</div>
+          <div style="font-size:11px;color:var(--muted)">📍 ${l.end}</div>
+          ${l.desc ? `<div style="font-size:12px;margin-top:6px">${l.desc}</div>` : ''}
+        </div>
+      `);
+      camadaLocais.addLayer(m);
+    });
+
+    atualizarStats();
+  }
+
+  function salvarLocal() {
+    const nome = document.getElementById('nomeNovoLocal').value.trim();
+    const lat  = parseFloat(document.getElementById('latNovoLocal').value);
+    const lng  = parseFloat(document.getElementById('lngNovoLocal').value);
+
+    if (!nome) { alert('Coloque o nome do local!'); return; }
+    if (!lat || !lng) { alert('Coloque as coordenadas! Clique no mapa para pegar automaticamente.'); return; }
+
+    const novo = {
+      id:   Date.now(),
+      tipo: document.getElementById('tipoNovoLocal').value,
+      nome: nome,
+      desc: document.getElementById('descNovoLocal').value,
+      end:  document.getElementById('endNovoLocal').value,
+      lat:  lat,
+      lng:  lng
+    };
+
+    locais.push(novo);
+    localStorage.setItem('saquanav-locais', JSON.stringify(locais));
+    fecharModal('modalNovoLocal');
+    renderizarLocais();
+    alert('✅ Local adicionado!');
+  }
+
+  function deletarLocal(id) {
+    if (!confirm('Deletar este local?')) return;
+    locais = locais.filter(l => l.id !== id);
+    localStorage.setItem('saquanav-locais', JSON.stringify(locais));
+    renderizarLocais();
+  }
+
+  // ============================================
+  // ESTATÍSTICAS
+  // ============================================
+  function atualizarStats() {
+    const total     = reports.length;
+    const pendentes = reports.filter(r => (r.status || 'pendente') === 'pendente').length;
+    const aprovados = reports.filter(r => r.status === 'aprovado').length;
+
+    document.getElementById('stat-total').textContent     = total;
+    document.getElementById('stat-pendentes').textContent = pendentes;
+    document.getElementById('stat-aprovados').textContent = aprovados;
+    document.getElementById('stat-locais').textContent    = locais.length;
+
+    // Conta tipos
+    const contagem = {};
+    reports.forEach(r => { contagem[r.tipo] = (contagem[r.tipo] || 0) + 1; });
+    const tipos = Object.entries(contagem).sort((a,b) => b[1]-a[1]);
+    document.getElementById('stats-tipos').innerHTML = tipos.map(([tipo, n]) =>
+      `<div>${EMOJIS[tipo] || '📌'} ${tipo}: <strong>${n}</strong></div>`
+    ).join('') || '<div style="color:var(--muted)">Sem dados ainda.</div>';
+  }
+
+  // ============================================
+  // MINHA LOCALIZAÇÃO
+  // ============================================
+  function minhaLocalizacao() {
+    if (!navigator.geolocation) { alert('Geolocalização não suportada.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const ll = [pos.coords.latitude, pos.coords.longitude];
+        if (marcadorLocal) mapa.removeLayer(marcadorLocal);
+        marcadorLocal = L.marker(ll, { icon: criarIcone('📍') }).addTo(mapa)
+          .bindPopup('<div style="font-weight:700">📍 Você está aqui!</div>').openPopup();
+        mapa.flyTo(ll, 16);
+      },
+      () => alert('Não foi possível obter sua localização.')
+    );
+  }
+
+  // ============================================
+  // UTILITÁRIOS
+  // ============================================
+  function irPara(lat, lng) { mapa.flyTo([lat, lng], 17); }
+  function abrirModal(id)   { document.getElementById(id).classList.add('ativo'); }
+  function fecharModal(id)  { document.getElementById(id).classList.remove('ativo'); }
+
+  function setStab(el, aba) {
+    document.querySelectorAll('.stab').forEach(s => s.classList.remove('ativo'));
+    el.classList.add('ativo');
+    ['reports','locais','stats'].forEach(id => {
+      document.getElementById('tab-'+id).style.display = id === aba ? 'block' : 'none';
+    });
+  }
+
+  // Fecha modal ao clicar no fundo
+  document.querySelectorAll('.modal-bg').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('ativo'); });
+  });
+</script>
+</body>
+</html>
