@@ -10,438 +10,20 @@
   <!-- Mapa gratuito -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-  <style>
-    /* Cores do app */
-    :root {
-      --bg:     #f4f6fa;
-      --navbar: #0b1b2b;
-      --card:   #ffffff;
-      --input:  #f0f2f5;
-      --text:   #0b1b2b;
-      --text2:  #666666;
-      --muted:  #aaaaaa;
-      --border: #e0e4ea;
-      --accent: #1a73e8;
-    }
-
-    /* Tema escuro */
-    body.dark {
-      --bg:     #0a0a1a;
-      --navbar: #060610;
-      --card:   #12122a;
-      --input:  #1a1a35;
-      --text:   #e8eaff;
-      --text2:  #8888bb;
-      --muted:  #4444aa;
-      --border: #22224a;
-      --accent: #4da6ff;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* --- NAVBAR --- */
-    .navbar {
-      background: var(--navbar);
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
-    .navbar-top { display: contents; }
-
-    .logo { flex-shrink: 0; }
-    .logo img { height: 28px; width: auto; }
-
-    .search-wrapper { flex: 1; min-width: 0; }
-
-    .navbar-btns { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-
-    .btn-nav {
-      background: white;
-      color: #0b1b2b;
-      border: none;
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-theme {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      border: none;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    /* --- BUSCA --- */
-    .search-wrapper { position: relative; }
-
-    .search-input {
-      width: 100%;
-      background: rgba(255,255,255,0.12);
-      border: 1.5px solid rgba(255,255,255,0.2);
-      border-radius: 24px;
-      padding: 6px 12px 6px 32px;
-      color: white;
-      font-size: 12px;
-      outline: none;
-    }
-
-    .search-input::placeholder { color: rgba(255,255,255,0.5); }
-    .search-input:focus { border-color: #4da6ff; }
-
-    .search-icon {
-      position: absolute;
-      left: 10px; top: 50%;
-      transform: translateY(-50%);
-      font-size: 12px;
-      pointer-events: none;
-    }
-
-    .search-results {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0; right: 0;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      z-index: 9999;
-      display: none;
-      max-height: 220px;
-      overflow-y: auto;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .search-results.ativo { display: block; }
-
-    .result-item {
-      padding: 11px 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      border-bottom: 0.5px solid var(--border);
-    }
-
-    .result-item:last-child { border-bottom: none; }
-    .result-item:hover { background: var(--input); }
-    .result-nome { font-size: 13px; font-weight: 600; color: var(--text); }
-    .result-end  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .result-vazio { padding: 14px; text-align: center; color: var(--muted); font-size: 13px; }
-
-    /* --- MAPA --- */
-    #mapa { flex: 1; width: 100%; }
-
-    body.dark .leaflet-tile {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-    }
-
-    .emoji-marker {
-      font-size: 26px;
-      line-height: 1;
-      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 14px !important;
-      background: var(--card) !important;
-    }
-    .leaflet-popup-tip { background: var(--card) !important; }
-    .leaflet-popup-content { color: var(--text) !important; margin: 12px 14px !important; }
-
-    .popup-titulo { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-    .popup-sub    { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
-    .popup-desc   { font-size: 13px; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
-    .popup-data   { font-size: 11px; color: var(--muted); }
-    .popup-foto   { width: 100%; border-radius: 8px; margin-bottom: 8px; max-height: 130px; object-fit: cover; }
-
-    .popup-btn-fav {
-      width: 100%;
-      margin-top: 8px;
-      padding: 7px;
-      background: var(--input);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    /* --- BARRA INFERIOR --- */
-    .bottom-bar {
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-around;
-      padding: 8px 0 12px;
-      flex-shrink: 0;
-    }
-
-    .tab {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      cursor: pointer;
-      padding: 4px 16px;
-      border-radius: 12px;
-    }
-
-    .tab-icon  { font-size: 22px; }
-    .tab-label { font-size: 10px; color: var(--muted); font-weight: 500; }
-    .tab.ativo .tab-label { color: var(--accent); font-weight: 700; }
-
-    /* --- MODAL --- */
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: flex-end;
-      z-index: 1000;
-    }
-
-    .modal-bg.ativo { display: flex; }
-
-    .modal-sheet {
-      background: var(--card);
-      border-radius: 24px 24px 0 0;
-      width: 100%;
-      padding: 16px 16px 32px;
-      max-height: 85vh;
-      overflow-y: auto;
-    }
-
-    .modal-handle {
-      width: 40px; height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 0 auto 16px;
-    }
-
-    .modal-titulo { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
-
-    .campo-label {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 5px;
-      display: block;
-    }
-
-    .campo {
-      width: 100%;
-      background: var(--input);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 14px;
-      color: var(--text);
-      outline: none;
-      margin-bottom: 12px;
-    }
-
-    .campo:focus { border-color: var(--accent); }
-    .campo::placeholder { color: var(--muted); }
-    textarea.campo { height: 70px; resize: none; }
-
-    .btn-foto {
-      width: 100%;
-      background: var(--input);
-      border: 1.5px dashed var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      color: var(--text2);
-      font-size: 13px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .btn-primario {
-      width: 100%;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-
-    .btn-secundario {
-      width: 100%;
-      background: var(--input);
-      color: var(--text2);
-      border: none;
-      border-radius: 14px;
-      padding: 12px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    /* --- PAINEL FAVORITOS --- */
-    .painel {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 900;
-      display: none;
-      flex-direction: column;
-    }
-
-    .painel.ativo { display: flex; }
-
-    .painel-header {
-      background: var(--navbar);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .painel-titulo { color: white; font-size: 17px; font-weight: 700; }
-
-    .btn-voltar {
-      background: rgba(255,255,255,0.15);
-      border: none;
-      color: white;
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .painel-body { flex: 1; overflow-y: auto; padding: 16px; }
-
-    .fav-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-    }
-
-    .fav-emoji { font-size: 28px; }
-    .fav-info  { flex: 1; }
-    .fav-nome  { font-size: 14px; font-weight: 600; color: var(--text); }
-    .fav-end   { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-    .btn-del-fav {
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .vazio-msg { text-align: center; color: var(--muted); font-size: 14px; margin-top: 40px; }
-
-    /* --- PAINEL FILTROS --- */
-    .filtros-painel {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 900;
-      display: none;
-      flex-direction: column;
-    }
-
-    .filtros-painel.ativo { display: flex; }
-
-    .filtro-item {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .filtro-esq {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 15px;
-      color: var(--text);
-    }
-
-    /* Botão liga/desliga */
-    .toggle {
-      width: 44px; height: 24px;
-      border-radius: 12px;
-      background: var(--accent);
-      position: relative;
-      cursor: pointer;
-      border: none;
-      transition: background 0.2s;
-    }
-
-    .toggle::after {
-      content: '';
-      position: absolute;
-      width: 18px; height: 18px;
-      background: white;
-      border-radius: 50%;
-      top: 3px; right: 3px;
-      transition: right 0.2s;
-    }
-
-    .toggle.off { background: var(--border); }
-    .toggle.off::after { right: 23px; }
-
-    /* Dica inicial */
-    .dica {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--navbar);
-      color: white;
-      padding: 10px 18px;
-      border-radius: 24px;
-      font-size: 12px;
-      text-align: center;
-      z-index: 500;
-      opacity: 1;
-      transition: opacity 0.5s;
-      white-space: nowrap;
-    }
-  </style>
+  <link rel="stylesheet" href="css/usuario.css">
 </head>
 <body>
 
   <!-- NAVBAR -->
   <div class="navbar">
-    <div class="logo"><img src="logo.png" alt="SaquaNav"></div>
+    <div class="logo-wrapper" style="position:relative;">
+      <div class="logo" onclick="toggleLogoMenu()" style="cursor:pointer;"><img src="logo.png" alt="SaquaNav"></div>
+      <div class="logo-menu" id="logoMenu">
+        <div class="logo-menu-item" id="menuItemLogin" onclick="abrirModal('modalLoginUsuario'); toggleLogoMenu()">👤 Entrar (Usuário)</div>
+        <div class="logo-menu-item" onclick="window.location.href='admin.html'">⚙️ Painel Administrador</div>
+        <div class="logo-menu-item text-danger" id="menuItemLogout" style="display:none;" onclick="fazerLogoutUsuario(); toggleLogoMenu()">Sair</div>
+      </div>
+    </div>
 
     <!-- Barra de busca -->
     <div class="search-wrapper">
@@ -491,9 +73,11 @@
 
   <!-- MODAL: CRIAR REPORT -->
   <div class="modal-bg" id="modalReport">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-titulo">📍 Novo Report</div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">Novo Report</div>
+        <button class="btn-fechar" onclick="fecharModal('modalReport')">✕</button>
+      </div>
 
       <label class="campo-label">Tipo de ocorrência</label>
       <select class="campo" id="tipoReport">
@@ -525,9 +109,11 @@
 
   <!-- MODAL: FAVORITAR LOCAL -->
   <div class="modal-bg" id="modalFavorito">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-titulo">❤️ Salvar Favorito</div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">❤️ Salvar Favorito</div>
+        <button class="btn-fechar" onclick="fecharModal('modalFavorito')">✕</button>
+      </div>
 
       <label class="campo-label">Ícone</label>
       <select class="campo" id="emojiFav">
@@ -548,68 +134,84 @@
     </div>
   </div>
 
-  <!-- PAINEL: FAVORITOS -->
-  <div class="painel" id="painelFavoritos">
-    <div class="painel-header">
-      <button class="btn-voltar" onclick="fecharPainel('painelFavoritos')">←</button>
-      <div class="painel-titulo">❤️ Meus Favoritos</div>
-    </div>
-    <div class="painel-body" id="listaFavoritos">
-      <div class="vazio-msg">Você ainda não tem favoritos.<br>Toque duas vezes no mapa e salve um local!</div>
+  <!-- MODAL: LOGIN DE USUÁRIO -->
+  <div class="modal-bg" id="modalLoginUsuario">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">👤 Acesso do Usuário</div>
+        <button class="btn-fechar" onclick="fecharModal('modalLoginUsuario')">✕</button>
+      </div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:16px;">
+        Faça login para salvar e visualizar seus favoritos!
+      </div>
+      <label class="campo-label">Seu Nome</label>
+      <input class="campo" id="nomeUsuarioLogin" type="text" placeholder="Como devemos te chamar?">
+      <button class="btn-primario" onclick="fazerLoginUsuario()">Entrar</button>
     </div>
   </div>
 
-  <!-- PAINEL: FILTROS -->
-  <div class="filtros-painel" id="painelFiltros">
-    <div class="painel-header">
-      <button class="btn-voltar" onclick="fecharPainel('painelFiltros')">←</button>
-      <div class="painel-titulo">🎚️ Filtros</div>
-    </div>
-    <div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🚧</span> Obras</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'obras')"></button>
+  <!-- PAINEL DE FAVORITOS -->
+  <div class="modal-bg" id="painelFavoritos">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">❤️ Meus Favoritos</div>
+        <button class="btn-fechar" onclick="fecharPainel('painelFavoritos')">✕</button>
       </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🚗</span> Trânsito</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'transito')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🚨</span> Acidentes</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'acidente')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>🎉</span> Eventos</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'evento')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>⚠️</span> Buracos na via</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'buraco')"></button>
-      </div>
-      <div class="filtro-item">
-        <div class="filtro-esq"><span>❤️</span> Meus Favoritos</div>
-        <button class="toggle" onclick="alternarFiltro(this, 'favorito')"></button>
+      <div class="painel-body" id="listaFavoritos">
+        <div class="vazio-msg">Você ainda não tem favoritos.<br>Toque em um local e clique no coração!</div>
       </div>
     </div>
   </div>
 
-  <!-- PAINEL: SOBRE -->
-  <div class="painel" id="painelSobre">
-    <div class="painel-header">
-      <button class="btn-voltar" onclick="fecharPainel('painelSobre')">←</button>
-      <div class="painel-titulo">ℹ️ Sobre o SaquaNav</div>
-    </div>
-    <div class="painel-body" style="text-align:center;padding-top:32px;">
-      <div style="font-size:64px;margin-bottom:16px;">🗺️</div>
-      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">SaquaNav</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.7;padding:0 16px;">
-        Aplicativo colaborativo de informações urbanas de Saquarema.<br><br>
-        Reporte obras, trânsito, acidentes, eventos e buracos para ajudar sua comunidade! 💙<br><br>
-        <strong style="color:var(--text)">Como usar:</strong><br>
-        Toque duas vezes no mapa para reportar algo ou salvar um favorito.
+  <!-- PAINEL DE FILTROS -->
+  <div class="modal-bg" id="painelFiltros">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">⚙️ Filtros do Mapa</div>
+        <button class="btn-fechar" onclick="fecharPainel('painelFiltros')">✕</button>
       </div>
-      <div style="margin-top:32px;font-size:12px;color:var(--muted);">
-        Desenvolvido com ❤️ em Saquarema, RJ
+      <div class="painel-body">
+        <div class="filtro-item">
+          <div class="filtro-esq">🚧 Obras</div>
+          <button class="toggle" id="toggle-obras" onclick="alternarFiltro(this, 'obras')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">🚗 Trânsito</div>
+          <button class="toggle" id="toggle-transito" onclick="alternarFiltro(this, 'transito')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">🚨 Acidentes</div>
+          <button class="toggle" id="toggle-acidente" onclick="alternarFiltro(this, 'acidente')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">🎉 Eventos</div>
+          <button class="toggle" id="toggle-evento" onclick="alternarFiltro(this, 'evento')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">⚠️ Buracos</div>
+          <button class="toggle" id="toggle-buraco" onclick="alternarFiltro(this, 'buraco')"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL SOBRE -->
+  <div class="modal-bg" id="painelSobre">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">ℹ️ Sobre</div>
+        <button class="btn-fechar" onclick="fecharPainel('painelSobre')">✕</button>
+      </div>
+      <div class="painel-body" style="text-align:center;">
+        <div style="font-size:64px;margin-bottom:16px;">🗺️</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">SaquaNav</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7;padding:0 16px;">
+          Aplicativo colaborativo de informações urbanas de Saquarema.<br><br>
+          Reporte obras, trânsito, acidentes, eventos e buracos para ajudar sua comunidade! 💙
+        </div>
+        <div style="margin-top:32px;font-size:12px;color:var(--muted);">
+          Desenvolvido com ❤️ em Saquarema, RJ
+        </div>
       </div>
     </div>
   </div>
@@ -617,413 +219,6 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    // Centro de Saquarema
-    const CENTRO = [-22.9370, -42.4980];
-
-    // Inicia o mapa
-    const mapa = L.map('mapa', {
-      doubleClickZoom: false // duplo clique abre o report, não dá zoom
-    }).setView(CENTRO, 15);
-
-    // Camada do OpenStreetMap (gratuito)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(mapa);
-
-    // Dados do app
-    let reports       = [];
-    let favoritos     = [];
-    let latLngAtual   = null;
-    let marcadorBusca = null;
-    let marcadorLocal = null;
-
-    // Quais tipos estão visíveis no mapa
-    let filtrosAtivos = new Set(['obras', 'transito', 'acidente', 'evento', 'buraco', 'favorito']);
-
-    // Camada de marcadores
-    const camada = L.layerGroup().addTo(mapa);
-
-    // Emoji de cada tipo
-    const EMOJIS = {
-      obras:    '🚧',
-      transito: '🚗',
-      acidente: '🚨',
-      evento:   '🎉',
-      buraco:   '⚠️',
-      favorito: '❤️'
-    };
-
-    // ---- TEMA ----
-    let isDark = localStorage.getItem('tema') === 'dark';
-
-    function aplicarTema() {
-      document.body.classList.toggle('dark', isDark);
-      document.getElementById('btnTema').textContent = isDark ? '☀️' : '🌙';
-    }
-
-    function alternarTema() {
-      isDark = !isDark;
-      localStorage.setItem('tema', isDark ? 'dark' : 'light');
-      aplicarTema();
-    }
-
-    aplicarTema();
-
-    // ---- BUSCA DE ENDEREÇO ----
-    let timerBusca = null;
-
-    function buscarEndereco(texto) {
-      clearTimeout(timerBusca);
-      const box = document.getElementById('searchResults');
-
-      if (texto.trim().length < 3) {
-        box.classList.remove('ativo');
-        return;
-      }
-
-      box.innerHTML = '<div class="result-vazio">🔍 Buscando...</div>';
-      box.classList.add('ativo');
-
-      timerBusca = setTimeout(async () => {
-        try {
-          const q = encodeURIComponent(texto + ', Saquarema, Rio de Janeiro, Brasil');
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`, {
-            headers: { 'Accept-Language': 'pt-BR' }
-          });
-          const data = await res.json();
-
-          if (!data.length) {
-            box.innerHTML = '<div class="result-vazio">Nenhum endereço encontrado.</div>';
-            return;
-          }
-
-          box.innerHTML = data.map(item => `
-            <div class="result-item" onclick="irParaEndereco(${item.lat}, ${item.lon}, '${item.display_name.replace(/'/g,"\\'")}')">
-              <span style="font-size:20px">📍</span>
-              <div>
-                <div class="result-nome">${item.display_name.split(',')[0]}</div>
-                <div class="result-end">${item.display_name.split(',').slice(1,3).join(', ')}</div>
-              </div>
-            </div>
-          `).join('');
-        } catch {
-          box.innerHTML = '<div class="result-vazio">Erro na busca.</div>';
-        }
-      }, 600);
-    }
-
-    function irParaEndereco(lat, lon, nome) {
-      document.getElementById('searchResults').classList.remove('ativo');
-      document.getElementById('searchInput').value = nome.split(',')[0];
-      if (marcadorBusca) mapa.removeLayer(marcadorBusca);
-      marcadorBusca = L.marker([lat, lon], { icon: criarIcone('📍') }).addTo(mapa);
-      marcadorBusca.bindPopup(`<div class="popup-titulo">📍 ${nome.split(',')[0]}</div>`).openPopup();
-      mapa.flyTo([lat, lon], 17);
-    }
-
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.search-wrapper'))
-        document.getElementById('searchResults').classList.remove('ativo');
-    });
-
-    // ---- MINHA LOCALIZAÇÃO ----
-    function minhaLocalizacao() {
-      if (!navigator.geolocation) { alert('Geolocalização não suportada.'); return; }
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const ll = [pos.coords.latitude, pos.coords.longitude];
-          if (marcadorLocal) mapa.removeLayer(marcadorLocal);
-          marcadorLocal = L.marker(ll, { icon: criarIcone('📍') }).addTo(mapa)
-            .bindPopup('<div class="popup-titulo">📍 Você está aqui!</div>').openPopup();
-          mapa.flyTo(ll, 16);
-        },
-        () => alert('Não foi possível obter sua localização.')
-      );
-    }
-
-    // ---- CRIAR ÍCONE EMOJI ----
-    function criarIcone(emoji) {
-      return L.divIcon({
-        html: `<div class="emoji-marker">${emoji}</div>`,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -16]
-      });
-    }
-
-    // ---- DUPLO CLIQUE = REPORT ----
-    mapa.on('dblclick', async e => {
-      latLngAtual = e.latlng;
-
-      document.getElementById('enderecoReport').value = 'Detectando...';
-      document.getElementById('enderecoFav').value    = 'Detectando...';
-      document.getElementById('tipoReport').value     = '';
-      document.getElementById('descReport').value     = '';
-      document.getElementById('previewFoto').style.display = 'none';
-
-      abrirModal('modalReport');
-
-      // Busca o endereço automaticamente pelo GPS
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`,
-          { headers: { 'Accept-Language': 'pt-BR' } }
-        );
-        const data = await res.json();
-        const end  = data.display_name || 'Endereço não encontrado';
-        document.getElementById('enderecoReport').value = end;
-        document.getElementById('enderecoFav').value    = end;
-      } catch {
-        document.getElementById('enderecoReport').value = 'Endereço não encontrado';
-        document.getElementById('enderecoFav').value    = 'Endereço não encontrado';
-      }
-    });
-
-    // ---- PREVIEW DA FOTO ----
-    function previewFoto(input) {
-      if (!input.files[0]) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = document.getElementById('previewFoto');
-        img.src = e.target.result;
-        img.style.display = 'block';
-      };
-      reader.readAsDataURL(input.files[0]);
-    }
-
-    // ---- SALVAR REPORT ----
-    async function salvarReport() {
-      const tipo = document.getElementById('tipoReport').value;
-      if (!tipo) { alert('Selecione um tipo de ocorrência!'); return; }
-
-      const payload = {
-        lat:       latLngAtual.lat,
-        lng:       latLngAtual.lng,
-        tipo:      tipo,
-        endereco:  document.getElementById('enderecoReport').value,
-        descricao: document.getElementById('descReport').value
-      };
-
-      // Converte foto para base64 se tiver
-      const fotoInput = document.getElementById('fotoReport');
-      if (fotoInput.files[0]) {
-        payload.imagem_base64 = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => res(e.target.result);
-          r.readAsDataURL(fotoInput.files[0]);
-        });
-      }
-
-      try {
-        await fetch('/api/relatorios', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        fecharModal('modalReport');
-        await carregarReports();
-        alert('✅ Report enviado! Obrigado por contribuir!');
-      } catch {
-        // Sem servidor: mostra no mapa assim mesmo
-        reports.push({ ...payload, id: Date.now(), timestamp: new Date().toISOString() });
-        renderizarMarcadores();
-        fecharModal('modalReport');
-        alert('✅ Report salvo localmente!');
-      }
-    }
-
-    // ---- FAVORITOS ----
-    function carregarFavoritos() {
-      favoritos = JSON.parse(localStorage.getItem('saquanav-favoritos') || '[]');
-      renderizarFavoritos();
-    }
-
-    function salvarFavorito() {
-      const nome = document.getElementById('nomeFav').value.trim() || 'Meu local';
-      const fav  = {
-        id:       Date.now(),
-        emoji:    document.getElementById('emojiFav').value,
-        nome:     nome,
-        endereco: document.getElementById('enderecoFav').value,
-        lat:      latLngAtual.lat,
-        lng:      latLngAtual.lng
-      };
-      favoritos.push(fav);
-      localStorage.setItem('saquanav-favoritos', JSON.stringify(favoritos));
-      fecharModal('modalFavorito');
-      renderizarFavoritos();
-      renderizarMarcadores();
-      alert('❤️ Favorito salvo!');
-    }
-
-    function deletarFavorito(id) {
-      if (!confirm('Remover este favorito?')) return;
-      favoritos = favoritos.filter(f => f.id !== id);
-      localStorage.setItem('saquanav-favoritos', JSON.stringify(favoritos));
-      renderizarFavoritos();
-      renderizarMarcadores();
-    }
-
-    function renderizarFavoritos() {
-      const lista = document.getElementById('listaFavoritos');
-      if (!favoritos.length) {
-        lista.innerHTML = '<div class="vazio-msg">Você ainda não tem favoritos.<br>Toque duas vezes no mapa e salve um local!</div>';
-        return;
-      }
-      lista.innerHTML = favoritos.map(f => `
-        <div class="fav-card" onclick="irParaFav(${f.lat}, ${f.lng})">
-          <span class="fav-emoji">${f.emoji}</span>
-          <div class="fav-info">
-            <div class="fav-nome">${f.nome}</div>
-            <div class="fav-end">${f.endereco ? f.endereco.split(',')[0] : ''}</div>
-          </div>
-          <button class="btn-del-fav" onclick="event.stopPropagation();deletarFavorito(${f.id})">🗑️</button>
-        </div>
-      `).join('');
-    }
-
-    function irParaFav(lat, lng) {
-      fecharPainel('painelFavoritos');
-      mapa.flyTo([lat, lng], 17);
-    }
-
-    // ---- GEOCODIFICAR ENDEREÇO VIA NOMINATIM ----
-    async function geocodificar(endereco) {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(endereco + ', Saquarema, RJ, Brasil')}&format=json&limit=1&countrycodes=br`;
-        const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'SaquaNav/1.0' } });
-        const data = await res.json();
-        if (data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      } catch {}
-      return null;
-    }
-
-    // ---- CARREGAR REPORTS ----
-    async function carregarReports() {
-      try {
-        const res = await fetch('/api/relatorios');
-        reports = await res.json();
-        renderizarMarcadores();
-      } catch {
-        reports = [
-          { id:1,  tipo:'transito', lat:-22.930798, lng:-42.490139, endereco:'Via local',          descricao:'Trânsito lento',                          timestamp: new Date().toISOString() },
-          { id:2,  tipo:'transito', lat:-22.933871, lng:-42.499419, endereco:'Via local',          descricao:'Trânsito parado',                         timestamp: new Date().toISOString() },
-          { id:3,  tipo:'buraco',   lat:-22.928672, lng:-42.511251, endereco:'Via local',          descricao:'Buraco na via, cuidado!',                 timestamp: new Date().toISOString() },
-          { id:4,  tipo:'evento',   lat:-22.931930, lng:-42.500200, endereco:'Via local',          descricao:'Evento na região',                        timestamp: new Date().toISOString() },
-          { id:5,  tipo:'obras',    lat:-22.932960, lng:-42.489920, endereco:'Via local',          descricao:'Obras na via – faixa bloqueada',          timestamp: new Date().toISOString() },
-          { id:6,  tipo:'acidente', lat:-22.924090, lng:-42.482890, endereco:'Via local',          descricao:'Acidente registrado',                     timestamp: new Date().toISOString() },
-          { id:7,  tipo:'transito', lat:-22.930240, lng:-42.484770, endereco:'Via local',          descricao:'Congestionamento',                        timestamp: new Date().toISOString() },
-          { id:8,  tipo:'evento',   lat:-22.934370, lng:-42.490680, endereco:'Via local',          descricao:'Evento na região',                        timestamp: new Date().toISOString() },
-          { id:9,  tipo:'obras',    lat:-22.932814, lng:-42.500567, endereco:'Via local',          descricao:'Obras em andamento',                      timestamp: new Date().toISOString() },
-          { id:10, tipo:'transito', lat:-22.895044, lng:-42.470977, endereco:'Via local',          descricao:'Trânsito congestionado',                  timestamp: new Date().toISOString() },
-          { id:11, tipo:'transito', lat:-22.893226, lng:-42.470301, endereco:'Via local',          descricao:'Trânsito lento',                          timestamp: new Date().toISOString() },
-          { id:12, tipo:'evento',   lat:-22.905555, lng:-42.475441, endereco:'Via local',          descricao:'Evento na região',                        timestamp: new Date().toISOString() },
-          { id:13, tipo:'evento',   lat:-22.895244, lng:-42.471117, endereco:'Via local',          descricao:'Evento na região',                        timestamp: new Date().toISOString() },
-          { id:14, tipo:'evento',   lat:-22.935344, lng:-42.483208, endereco:'Via local',          descricao:'Evento na região',                        timestamp: new Date().toISOString() },
-          { id:15, tipo:'transito', lat:-22.927291, lng:-42.479866, endereco:'Via local',          descricao:'Trânsito lento',                          timestamp: new Date().toISOString() },
-          { id:16, tipo:'buraco',   lat:-22.926480, lng:-42.504710, endereco:'Via local',          descricao:'Buracos na via!',                         timestamp: new Date().toISOString() }
-        ];
-        renderizarMarcadores();
-      }
-    }
-
-    // ---- COLOCAR MARCADORES NO MAPA ----
-    function renderizarMarcadores() {
-      camada.clearLayers();
-
-      // Reports
-      reports.forEach(r => {
-        if (!filtrosAtivos.has(r.tipo)) return; // pula se filtro estiver desligado
-
-        const emoji = EMOJIS[r.tipo] || '📌';
-        const m     = L.marker([r.lat, r.lng], { icon: criarIcone(emoji) });
-        const data  = new Date(r.timestamp).toLocaleString('pt-BR');
-        const fotoHtml = r.imagem_base64 ? `<img src="${r.imagem_base64}" class="popup-foto">` : '';
-
-        m.bindPopup(`
-          <div style="min-width:200px">
-            <div class="popup-titulo">${emoji} ${r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1)}</div>
-            <div class="popup-sub">📍 ${r.endereco || ''}</div>
-            ${fotoHtml}
-            ${r.descricao ? `<div class="popup-desc">${r.descricao}</div>` : ''}
-            <div class="popup-data">${data}</div>
-            <button class="popup-btn-fav" onclick="abrirFavoritoDoMapa(${r.lat},${r.lng},'${(r.endereco||'').replace(/'/g,"\\'")}')">❤️ Salvar nos favoritos</button>
-          </div>
-        `);
-        camada.addLayer(m);
-      });
-
-      // Favoritos
-      if (filtrosAtivos.has('favorito')) {
-        favoritos.forEach(f => {
-          const m = L.marker([f.lat, f.lng], { icon: criarIcone(f.emoji) });
-          m.bindPopup(`
-            <div style="min-width:180px">
-              <div class="popup-titulo">${f.emoji} ${f.nome}</div>
-              <div class="popup-sub">📍 ${f.endereco ? f.endereco.split(',')[0] : ''}</div>
-              <button class="popup-btn-fav" onclick="deletarFavorito(${f.id})">🗑️ Remover favorito</button>
-            </div>
-          `);
-          camada.addLayer(m);
-        });
-      }
-    }
-
-    function abrirFavoritoDoMapa(lat, lng, endereco) {
-      latLngAtual = { lat, lng };
-      document.getElementById('enderecoFav').value = endereco;
-      document.getElementById('nomeFav').value     = '';
-      mapa.closePopup();
-      abrirModal('modalFavorito');
-    }
-
-    // ---- FILTROS ----
-    function alternarFiltro(btn, tipo) {
-      btn.classList.toggle('off');
-      if (filtrosAtivos.has(tipo)) filtrosAtivos.delete(tipo);
-      else filtrosAtivos.add(tipo);
-      renderizarMarcadores();
-    }
-
-    // ---- ABAS ----
-    function setTab(el, aba) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
-      el.classList.add('ativo');
-      if (aba === 'favoritos') abrirPainel('painelFavoritos');
-      else if (aba === 'filtros') abrirPainel('painelFiltros');
-      else if (aba === 'sobre') abrirPainel('painelSobre');
-    }
-
-    // ---- ABRIR / FECHAR ----
-    function abrirModal(id)  { document.getElementById(id).classList.add('ativo'); }
-    function fecharModal(id) { document.getElementById(id).classList.remove('ativo'); }
-    function abrirPainel(id) { document.getElementById(id).classList.add('ativo'); }
-    function fecharPainel(id) {
-      document.getElementById(id).classList.remove('ativo');
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
-      document.querySelector('.tab').classList.add('ativo');
-    }
-
-    // Fecha modal ao clicar fora
-    document.querySelectorAll('.modal-bg').forEach(m => {
-      m.addEventListener('click', e => {
-        if (e.target === m) m.classList.remove('ativo');
-      });
-    });
-
-    // Dica some depois de 4 segundos
-    setTimeout(() => {
-      const dica = document.getElementById('dica');
-      dica.style.opacity = '0';
-      setTimeout(() => dica.remove(), 500);
-    }, 4000);
-
-    // ---- INICIAR ----
-    carregarReports();
-    carregarFavoritos();
-  </script>
+  <script src="js/usuario.js?v=6"></script>
 </body>
 </html>
