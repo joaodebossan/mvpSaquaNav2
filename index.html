@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>SaquaNav</title>
+
+  <!-- Mapa gratuito -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <link rel="stylesheet" href="css/usuario.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo-wrapper" style="position:relative;">
+      <div class="logo" onclick="toggleLogoMenu()" style="cursor:pointer;"><img src="logo.png" alt="SaquaNav"></div>
+      <div class="logo-menu" id="logoMenu">
+        <div class="logo-menu-item" id="menuItemLogin" onclick="abrirModal('modalLoginUsuario'); toggleLogoMenu()">👤 Entrar (Usuário)</div>
+        <div class="logo-menu-item" onclick="window.location.href='admin.html'">⚙️ Painel Administrador</div>
+        <div class="logo-menu-item text-danger" id="menuItemLogout" style="display:none;" onclick="fazerLogoutUsuario(); toggleLogoMenu()">Sair</div>
+      </div>
+    </div>
+
+    <!-- Barra de busca -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input
+        class="search-input"
+        id="searchInput"
+        type="text"
+        placeholder="Buscar endereço em Saquarema..."
+        autocomplete="off"
+        oninput="buscarEndereco(this.value)"
+      >
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="navbar-btns">
+      <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
+      <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div id="mapa"></div>
+
+  <!-- Dica para o usuário -->
+  <div class="dica" id="dica">💡 Toque duas vezes no mapa para reportar algo</div>
+
+  <!-- BARRA INFERIOR -->
+  <div class="bottom-bar">
+    <div class="tab ativo" onclick="setTab(this, 'mapa')">
+      <span class="tab-icon">🗺️</span>
+      <span class="tab-label">Mapa</span>
+    </div>
+    <div class="tab" onclick="setTab(this, 'filtros')">
+      <span class="tab-icon">🎚️</span>
+      <span class="tab-label">Filtros</span>
+    </div>
+    <div class="tab" onclick="setTab(this, 'favoritos')">
+      <span class="tab-icon">❤️</span>
+      <span class="tab-label">Favoritos</span>
+    </div>
+    <div class="tab" onclick="setTab(this, 'sobre')">
+      <span class="tab-icon">ℹ️</span>
+      <span class="tab-label">Sobre</span>
+    </div>
+  </div>
+
+  <!-- MODAL: CRIAR REPORT -->
+  <div class="modal-bg" id="modalReport">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">Novo Report</div>
+        <button class="btn-fechar" onclick="fecharModal('modalReport')">✕</button>
+      </div>
+
+      <label class="campo-label">Tipo de ocorrência</label>
+      <select class="campo" id="tipoReport">
+        <option value="">Selecione...</option>
+        <option value="obras">🚧 Obra</option>
+        <option value="transito">🚗 Trânsito</option>
+        <option value="acidente">🚨 Acidente</option>
+        <option value="evento">🎉 Evento</option>
+        <option value="buraco">⚠️ Buraco na via</option>
+      </select>
+
+      <label class="campo-label">Endereço</label>
+      <input class="campo" id="enderecoReport" type="text" placeholder="Detectando endereço...">
+
+      <label class="campo-label">Descrição (opcional)</label>
+      <textarea class="campo" id="descReport" placeholder="Ex: Buraco enorme na esquina, cuidado!"></textarea>
+
+      <label class="campo-label">Foto (opcional)</label>
+      <label class="btn-foto" for="fotoReport">
+        📸 Tirar foto / Escolher da galeria
+      </label>
+      <input type="file" id="fotoReport" accept="image/*" style="display:none" onchange="previewFoto(this)">
+      <img id="previewFoto" src="" style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:150px;object-fit:cover;">
+
+      <button class="btn-primario" onclick="salvarReport()">✅ Enviar Report</button>
+      <button class="btn-secundario" onclick="fecharModal('modalReport')">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- MODAL: FAVORITAR LOCAL -->
+  <div class="modal-bg" id="modalFavorito">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">❤️ Salvar Favorito</div>
+        <button class="btn-fechar" onclick="fecharModal('modalFavorito')">✕</button>
+      </div>
+
+      <label class="campo-label">Ícone</label>
+      <select class="campo" id="emojiFav">
+        <option value="❤️">❤️ Favorito</option>
+        <option value="🏠">🏠 Casa</option>
+        <option value="💼">💼 Trabalho</option>
+        <option value="⭐">⭐ Especial</option>
+      </select>
+
+      <label class="campo-label">Nome do local</label>
+      <input class="campo" id="nomeFav" type="text" placeholder="Ex: Casa, Trabalho, Padaria...">
+
+      <label class="campo-label">Endereço</label>
+      <input class="campo" id="enderecoFav" type="text" placeholder="Detectando endereço...">
+
+      <button class="btn-primario" onclick="salvarFavorito()">💾 Salvar</button>
+      <button class="btn-secundario" onclick="fecharModal('modalFavorito')">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN DE USUÁRIO -->
+  <div class="modal-bg" id="modalLoginUsuario">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">👤 Acesso do Usuário</div>
+        <button class="btn-fechar" onclick="fecharModal('modalLoginUsuario')">✕</button>
+      </div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:16px;">
+        Faça login para salvar e visualizar seus favoritos!
+      </div>
+      <label class="campo-label">Seu Nome</label>
+      <input class="campo" id="nomeUsuarioLogin" type="text" placeholder="Como devemos te chamar?">
+      <button class="btn-primario" onclick="fazerLoginUsuario()">Entrar</button>
+    </div>
+  </div>
+
+  <!-- PAINEL DE FAVORITOS -->
+  <div class="modal-bg" id="painelFavoritos">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">❤️ Meus Favoritos</div>
+        <button class="btn-fechar" onclick="fecharPainel('painelFavoritos')">✕</button>
+      </div>
+      <div class="painel-body" id="listaFavoritos">
+        <div class="vazio-msg">Você ainda não tem favoritos.<br>Toque em um local e clique no coração!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL DE FILTROS -->
+  <div class="modal-bg" id="painelFiltros">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">⚙️ Filtros do Mapa</div>
+        <button class="btn-fechar" onclick="fecharPainel('painelFiltros')">✕</button>
+      </div>
+      <div class="painel-body">
+        <div class="filtro-item">
+          <div class="filtro-esq">🚧 Obras</div>
+          <button class="toggle" id="toggle-obras" onclick="alternarFiltro(this, 'obras')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">🚗 Trânsito</div>
+          <button class="toggle" id="toggle-transito" onclick="alternarFiltro(this, 'transito')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">🚨 Acidentes</div>
+          <button class="toggle" id="toggle-acidente" onclick="alternarFiltro(this, 'acidente')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">🎉 Eventos</div>
+          <button class="toggle" id="toggle-evento" onclick="alternarFiltro(this, 'evento')"></button>
+        </div>
+        <div class="filtro-item">
+          <div class="filtro-esq">⚠️ Buracos</div>
+          <button class="toggle" id="toggle-buraco" onclick="alternarFiltro(this, 'buraco')"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL SOBRE -->
+  <div class="modal-bg" id="painelSobre">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-titulo">ℹ️ Sobre</div>
+        <button class="btn-fechar" onclick="fecharPainel('painelSobre')">✕</button>
+      </div>
+      <div class="painel-body" style="text-align:center;">
+        <div style="font-size:64px;margin-bottom:16px;">🗺️</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">SaquaNav</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7;padding:0 16px;">
+          Aplicativo colaborativo de informações urbanas de Saquarema.<br><br>
+          Reporte obras, trânsito, acidentes, eventos e buracos para ajudar sua comunidade! 💙
+        </div>
+        <div style="margin-top:32px;font-size:12px;color:var(--muted);">
+          Desenvolvido com ❤️ em Saquarema, RJ
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+
+  <script src="js/usuario.js?v=7"></script>
+</body>
+</html>

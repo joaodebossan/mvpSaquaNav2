@@ -1,3 +1,12 @@
+  // ---- FIX: Altura real do viewport no Android/iOS ----
+  function fixViewportHeight() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', vh + 'px');
+  }
+  fixViewportHeight();
+  window.addEventListener('resize', fixViewportHeight);
+  window.addEventListener('orientationchange', () => setTimeout(fixViewportHeight, 100));
+
   // ---- LOGIN ----
   // Usuário: admin | Senha: saqua123
   // (Em um projeto real, isso seria verificado no servidor!)
@@ -72,6 +81,7 @@
   let marcadorBusca = null;
   let timerBusca = null;
   let timerBuscaPin = null;
+  let latLngNovoReport = null; // escopo global para que salvarNovoReport() possa acessar
 
   // ---- BUSCA DE ENDEREÇO ----
   function buscarEndereco(texto) {
@@ -141,7 +151,7 @@
 
   function fazerLogoutAdmin() {
     // Redireciona para a página principal (usuário)
-    window.location.href = 'usuario.html';
+    window.location.href = 'index.html';
   }
 
   // Fecha busca ou menu ao clicar fora
@@ -168,7 +178,7 @@
     camadaReports = L.layerGroup().addTo(mapa);
 
     // ---- DUPLO CLIQUE / CLIQUE LONGO = NOVO REPORT ----
-    let latLngNovoReport = null;
+    // Removido: let latLngNovoReport = null; — declarado no escopo global acima
 
     const abrirNovoReportDoMapa = async e => {
       latLngNovoReport = e.latlng;
@@ -202,24 +212,70 @@
     carregarReports();
     minhaLocalizacao(true);
 
-    // Tempo real: verifica novos reports a cada 5 segundos
-    setInterval(carregarReports, 5000);
+    // Dica mobile: aparece após o login, some em 6 segundos
+    if (window.innerWidth <= 700) {
+      const dica = document.createElement('div');
+      dica.id = 'dica-admin';
+      dica.textContent = '📍 Pressione e segure para adicionar um novo pin';
+      dica.style.cssText = [
+        'position:fixed',
+        'bottom:calc(240px + env(safe-area-inset-bottom) + 12px)',
+        'left:50%',
+        'transform:translateX(-50%)',
+        'background:rgba(10,20,40,0.92)',
+        'color:#fff',
+        'padding:10px 20px',
+        'border-radius:24px',
+        'font-size:13px',
+        'font-weight:600',
+        'white-space:nowrap',
+        'pointer-events:none',
+        'z-index:99999',          // acima de tudo
+        'box-shadow:0 4px 20px rgba(0,0,0,0.4)',
+        'transition:opacity 0.6s ease',
+        'opacity:1'
+      ].join(';');
+      document.body.appendChild(dica);
+
+      // Some com fade após 6 segundos
+      setTimeout(() => {
+        dica.style.opacity = '0';
+        setTimeout(() => dica.remove(), 700);
+      }, 6000);
+    }
+
+    // Realtime: recebe notificações instantâneas do Supabase via WebSocket
+    // Muito mais eficiente que polling a cada 5 segundos
+    db.channel('admin-reports')
+      .on('postgres_changes', {
+        event: '*',        // INSERT, UPDATE ou DELETE
+        schema: 'public',
+        table: 'reports'
+      }, () => {
+        carregarReports(); // recarrega apenas quando há mudança real
+      })
+      .subscribe();
+
+    // Fallback: recarrega a cada 60s caso o WebSocket caia
+    setInterval(carregarReports, 60000);
   }
 
-  // ---- CARREGAR REPORTS (COM TEMPO REAL) ----
+  // ---- CARREGAR REPORTS ----
   let reportsHash = '';
 
   async function carregarReports() {
     try {
-      const res = await fetch('/api/relatorios');
-      if (!res.ok) throw new Error('Servidor offline');
-      const data = await res.json();
-      
-      // Só recarrega a tela se houver alguma mudança real nos dados
+      // Busca sem imagem_base64 para carregamento rápido
+      const { data, error } = await db
+        .from('reports')
+        .select('id,tipo,lat,lng,endereco,descricao,timestamp,status')
+        .order('timestamp', { ascending: false });
+      if (error) throw error;
+
       const novoHash = JSON.stringify(data);
       if (novoHash !== reportsHash) {
         reportsHash = novoHash;
-        reports = data;
+        reports = data || [];
         renderizarReports();
         atualizarStats();
       }
@@ -242,6 +298,8 @@
       const emoji  = EMOJIS[r.tipo] || '📌';
       const status = r.status || 'pendente';
       const data   = new Date(r.timestamp).toLocaleString('pt-BR');
+      // Foto carregada de forma lazy ao clicar no botão
+      const fotoSlot = `<div id="foto-slot-${r.id}"><button class="btn-ver-foto" onclick="carregarFotoCard(${r.id})">📷 Ver foto</button></div>`;
       return `
         <div class="report-card" id="card-${r.id}">
           <div class="report-header">
@@ -250,6 +308,7 @@
           </div>
           <div class="report-end">📍 ${r.endereco || 'Sem endereço'}</div>
           ${r.descricao ? `<div class="report-desc">${r.descricao}</div>` : ''}
+          ${fotoSlot}
           <div class="report-data">🕐 ${data}</div>
           <div class="report-acoes">
             <button class="btn-ir"      onclick="irPara(${r.lat},${r.lng})">🗺️ Ver</button>
@@ -261,15 +320,26 @@
       `;
     }).join('');
 
+    // Mede o card real no DOM e ajusta a altura da sidebar
+    requestAnimationFrame(ajustarSidebarMobile);
+
+
     // Coloca os reports no mapa
     reports.forEach(r => {
       if (r.status === 'recusado') return; // não mostra recusados no mapa
       const emoji = EMOJIS[r.tipo] || '📌';
       const m     = L.marker([r.lat, r.lng], { icon: criarIcone(emoji) });
+
+      // Popup com botão lazy de foto — wrapper div para não fechar o popup ao clicar
       m.bindPopup(`
-        <div style="min-width:180px">
+        <div style="min-width:180px" id="popup-inner-${r.id}">
           <div style="font-size:14px;font-weight:700;color:var(--text)">${emoji} ${r.tipo}</div>
           <div style="font-size:11px;color:var(--muted)">📍 ${r.endereco || ''}</div>
+          <div id="foto-popup-${r.id}">
+            <button class="btn-ver-foto"
+              onclick="event.stopPropagation();carregarFotoPopup(${r.id})"
+              style="margin-top:6px">📷 Ver foto</button>
+          </div>
           ${r.descricao ? `<div style="font-size:12px;margin-top:6px">${r.descricao}</div>` : ''}
         </div>
       `);
@@ -277,14 +347,12 @@
     });
   }
 
+
   // ---- AÇÕES NOS REPORTS ----
   async function aprovarReport(id) {
     try {
-      await fetch(`/api/relatorios/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'aprovado' })
-      });
+      const { error } = await db.from('reports').update({ status: 'aprovado' }).eq('id', id);
+      if (error) throw error;
       carregarReports();
     } catch {
       alert('Erro ao aprovar report');
@@ -293,11 +361,8 @@
 
   async function recusarReport(id) {
     try {
-      await fetch(`/api/relatorios/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'recusado' })
-      });
+      const { error } = await db.from('reports').update({ status: 'recusado' }).eq('id', id);
+      if (error) throw error;
       carregarReports();
     } catch {
       alert('Erro ao recusar report');
@@ -307,39 +372,104 @@
   async function deletarReport(id) {
     if (!confirm('Deletar este report?')) return;
     try {
-      await fetch(`/api/relatorios/${id}`, { method: 'DELETE' });
+      const { error } = await db.from('reports').delete().eq('id', id);
+      if (error) throw error;
       carregarReports();
     } catch {
       alert('Erro ao deletar report');
     }
   }
 
+  // ---- LAZY LOAD DE FOTO NOS CARDS DO ADMIN ----
+  async function carregarFotoCard(id) {
+    const slot = document.getElementById(`foto-slot-${id}`);
+    if (!slot) return;
+    slot.innerHTML = '<span style="font-size:11px;color:var(--muted)">Carregando...</span>';
+    try {
+      const { data, error } = await db
+        .from('reports')
+        .select('imagem_base64')
+        .eq('id', id)
+        .single();
+      if (error || !data?.imagem_base64) {
+        slot.innerHTML = '<span style="font-size:11px;color:var(--muted)">Sem foto</span>';
+        return;
+      }
+      slot.innerHTML = `<img src="${data.imagem_base64}" style="width:100%;border-radius:8px;margin:6px 0;max-height:120px;object-fit:cover;">`;
+      requestAnimationFrame(ajustarSidebarMobile);
+    } catch {
+      slot.innerHTML = '<span style="font-size:11px;color:var(--muted)">Erro ao carregar foto</span>';
+    }
+  }
+
+  // ---- LAZY LOAD DE FOTO NOS POPUPS DO MAPA (ADMIN) ----
+  async function carregarFotoPopup(id) {
+    // Usa o wrapper div para trocar o conteúdo sem fechar o popup
+    const slot = document.getElementById(`foto-popup-${id}`);
+    if (!slot) return;
+    slot.innerHTML = '<span style="font-size:11px;color:var(--muted)">Carregando...</span>';
+    try {
+      const { data, error } = await db
+        .from('reports')
+        .select('imagem_base64')
+        .eq('id', id)
+        .single();
+      if (error || !data?.imagem_base64) {
+        slot.innerHTML = '<span style="font-size:11px;color:var(--muted)">Sem foto</span>';
+        return;
+      }
+      slot.innerHTML = `<img src="${data.imagem_base64}"
+        style="width:100%;border-radius:8px;margin:6px 0;max-height:120px;object-fit:cover;display:block">`;
+    } catch {
+      slot.innerHTML = '<span style="font-size:11px;color:var(--muted)">Erro ao carregar</span>';
+    }
+  }
+
+  // ---- FOTO DO REPORT (ADMIN) ----
+  function previewFotoAdmin(input) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('previewFotoAdmin');
+      img.src = e.target.result;
+      img.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
   // ---- ADICIONAR REPORT MANUALMENTE ----
   async function salvarNovoReport() {
-    const lat  = parseFloat(document.getElementById('latNovoReport').value);
-    const lng  = parseFloat(document.getElementById('lngNovoReport').value);
-
-    if (!lat || !lng) { alert('Coloque as coordenadas! Clique no mapa para pegar automaticamente.'); return; }
+    // Usa a variável latLngNovoReport que é preenchida ao clicar no mapa
+    if (!latLngNovoReport) { alert('Clique no mapa para definir a localização!'); return; }
 
     const novo = {
-      id:        Date.now(),
       tipo:      document.getElementById('tipoNovoReport').value,
       endereco:  document.getElementById('endNovoReport').value,
       descricao: document.getElementById('descNovoReport').value,
-      lat:       lat,
-      lng:       lng,
-      timestamp: new Date().toISOString(),
+      lat:       latLngNovoReport.lat,
+      lng:       latLngNovoReport.lng,
       status:    'aprovado'
     };
 
-    try {
-      const res = await fetch('/api/relatorios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(novo)
+    // Converte foto para base64 se houver
+    const fotoInput = document.getElementById('fotoNovoReport');
+    if (fotoInput && fotoInput.files[0]) {
+      novo.imagem_base64 = await new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result);
+        r.readAsDataURL(fotoInput.files[0]);
       });
-      if (!res.ok) throw new Error('Servidor offline');
+    }
+
+    try {
+      const { error } = await db.from('reports').insert(novo);
+      if (error) throw error;
       fecharModal('modalNovoReport');
+      // Limpa preview e input da foto
+      const imgPreview = document.getElementById('previewFotoAdmin');
+      if (imgPreview) { imgPreview.src = ''; imgPreview.style.display = 'none'; }
+      if (fotoInput) fotoInput.value = '';
+      latLngNovoReport = null;
       carregarReports();
       alert('✅ Report adicionado!');
     } catch {
@@ -404,6 +534,32 @@
   function irPara(lat, lng)  { mapa.flyTo([lat, lng], 17); }
   function abrirModal(id)    { document.getElementById(id).classList.add('ativo'); }
   function fecharModal(id)   { document.getElementById(id).classList.remove('ativo'); }
+
+  // Mede o card real no DOM e ajusta a altura da sidebar para caber exatamente
+  function ajustarSidebarMobile() {
+    if (window.innerWidth > 700) return;
+
+    const sidebar  = document.querySelector('.sidebar');
+    const tabs     = document.querySelector('.sidebar-tabs');
+    const card     = document.querySelector('.sidebar-body .report-card');
+    if (!sidebar || !tabs || !card) return;
+
+    const tabsH = tabs.offsetHeight;       // altura real das abas
+    const cardH = card.scrollHeight;       // altura TOTAL do conteúdo do card (sem corte)
+    const buffer = 12;                     // pequena folga para não ficar justo
+
+    // Seta a variável CSS que o .sidebar usa para sua height
+    document.documentElement.style.setProperty(
+      '--sidebar-h',
+      `calc(${tabsH + cardH + buffer}px + env(safe-area-inset-bottom))`
+    );
+
+    // Força o mapa a recalcular o tamanho
+    if (typeof mapa !== 'undefined') mapa.invalidateSize();
+  }
+
+  // Reajusta ao rotacionar a tela
+  window.addEventListener('orientationchange', () => setTimeout(ajustarSidebarMobile, 200));
 
   function setStab(el, aba) {
     document.querySelectorAll('.stab').forEach(s => s.classList.remove('ativo'));

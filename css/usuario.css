@@ -30,7 +30,9 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
-      height: 100vh;
+      /* Usa a altura real do viewport calculada pelo JS (fix Android/iOS) */
+      height: calc(var(--vh, 1vh) * 100);
+      max-height: calc(var(--vh, 1vh) * 100);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -201,7 +203,18 @@
       color: var(--text);
       font-size: 13px;
       cursor: pointer;
+      transition: background 0.2s;
     }
+    .popup-btn-fav:hover { background: var(--border); }
+
+    /* Variante para remover favorito — tom avermelhado */
+    .popup-btn-desfav {
+      background: #ffebee;
+      border-color: #ffcdd2;
+      color: #c62828;
+    }
+    .popup-btn-desfav:hover { background: #ffcdd2; }
+    body.dark .popup-btn-desfav { background: #3d0000; border-color: #7f0000; color: #ff5252; }
 
     /* --- BARRA INFERIOR --- */
     .bottom-bar {
@@ -209,7 +222,8 @@
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
-      padding: 8px 0 12px;
+      /* padding-bottom: base + safe-area do sistema (gesture bar, etc) */
+      padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
       flex-shrink: 0;
     }
 
@@ -422,7 +436,8 @@
     /* Dica inicial */
     .dica {
       position: fixed;
-      bottom: 80px;
+      /* Posiciona acima da bottom-bar considerando a safe area */
+      bottom: calc(72px + env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       background: var(--navbar);

@@ -1,3 +1,14 @@
+    // ---- FIX: Altura real do viewport no Android/iOS ----
+    // O 100vh no Android Chrome inclui a barra do navegador, causando overflow.
+    // Aqui setamos --vh com a altura real visível e usamos no CSS.
+    function fixViewportHeight() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', vh + 'px');
+    }
+    fixViewportHeight();
+    window.addEventListener('resize', fixViewportHeight);
+    window.addEventListener('orientationchange', () => setTimeout(fixViewportHeight, 100));
+
     // Centro de Saquarema
     const CENTRO = [-22.9370, -42.4980];
 
@@ -152,8 +163,11 @@
       localStorage.setItem('saquanav-usuario-nome', nome);
       fecharModal('modalLoginUsuario');
       atualizarEstadoLogin();
+      // Carrega os favoritos deste usuário e atualiza os badges no mapa
+      carregarFavoritos();
+      renderizarMarcadores();
       alert(`Olá, ${nome}! Agora você pode salvar seus favoritos.`);
-      
+
       // Se estava tentando acessar os favoritos, abrimos agora
       if (document.getElementById('painelFavoritos').classList.contains('pendente')) {
         document.getElementById('painelFavoritos').classList.remove('pendente');
@@ -163,8 +177,11 @@
 
     function fazerLogoutUsuario() {
       localStorage.removeItem('saquanav-usuario-nome');
+      favoritos = []; // limpa favoritos da memória
       atualizarEstadoLogin();
-      fecharPainel('painelFavoritos'); // Força fechar se estiver aberto
+      fecharPainel('painelFavoritos');
+      renderizarFavoritos();  // limpa a lista
+      renderizarMarcadores(); // remove os badges do mapa
       alert('Você saiu da sua conta.');
     }
 
@@ -201,9 +218,13 @@
     }
 
     // ---- CRIAR ÍCONE EMOJI ----
-    function criarIcone(emoji) {
+    // Cria ícone emoji simples ou com badge de favorito
+    function criarIcone(emoji, ehFavorito = false) {
+      const badge = ehFavorito
+        ? '<span style="position:absolute;top:-4px;right:-4px;font-size:10px;line-height:1">❤️</span>'
+        : '';
       return L.divIcon({
-        html: `<div class="emoji-marker">${emoji}</div>`,
+        html: `<div class="emoji-marker" style="position:relative">${emoji}${badge}</div>`,
         className: '',
         iconSize: [32, 32],
         iconAnchor: [16, 16],
@@ -262,9 +283,10 @@
       const payload = {
         lat:       latLngAtual.lat,
         lng:       latLngAtual.lng,
-        tipo:      tipo,
+        tipo,
         endereco:  document.getElementById('enderecoReport').value,
-        descricao: document.getElementById('descReport').value
+        descricao: document.getElementById('descReport').value,
+        status:    'pendente'
       };
 
       // Converte foto para base64 se tiver
@@ -278,12 +300,8 @@
       }
 
       try {
-        const res = await fetch('/api/relatorios', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error('Servidor offline');
+        const { error } = await db.from('reports').insert(payload);
+        if (error) throw error;
         fecharModal('modalReport');
         await carregarReports();
         alert('✅ Report enviado! Obrigado por contribuir!');
@@ -293,8 +311,15 @@
     }
 
     // ---- FAVORITOS ----
+    // Retorna a chave de favoritos do usuário atual
+    function chaveFavoritos() {
+      const usuario = getUsuarioLogado();
+      return usuario ? `saquanav-favoritos-${usuario}` : null;
+    }
+
     function carregarFavoritos() {
-      favoritos = JSON.parse(localStorage.getItem('saquanav-favoritos') || '[]');
+      const chave = chaveFavoritos();
+      favoritos = chave ? JSON.parse(localStorage.getItem(chave) || '[]') : [];
       renderizarFavoritos();
     }
 
@@ -309,7 +334,8 @@
         lng:      latLngAtual.lng
       };
       favoritos.push(fav);
-      localStorage.setItem('saquanav-favoritos', JSON.stringify(favoritos));
+      const chave = chaveFavoritos();
+      if (chave) localStorage.setItem(chave, JSON.stringify(favoritos));
       fecharModal('modalFavorito');
       renderizarFavoritos();
       renderizarMarcadores();
@@ -319,7 +345,18 @@
     function deletarFavorito(id) {
       if (!confirm('Remover este favorito?')) return;
       favoritos = favoritos.filter(f => f.id !== id);
-      localStorage.setItem('saquanav-favoritos', JSON.stringify(favoritos));
+      const chave = chaveFavoritos();
+      if (chave) localStorage.setItem(chave, JSON.stringify(favoritos));
+      renderizarFavoritos();
+      renderizarMarcadores();
+    }
+
+    // Remove favorito pelo lat/lng — usado pelo popup do mapa
+    function deletarFavoritoDoMapa(lat, lng) {
+      favoritos = favoritos.filter(f => !(f.lat === lat && f.lng === lng));
+      const chave = chaveFavoritos();
+      if (chave) localStorage.setItem(chave, JSON.stringify(favoritos));
+      mapa.closePopup();
       renderizarFavoritos();
       renderizarMarcadores();
     }
@@ -361,9 +398,14 @@
     // ---- CARREGAR REPORTS ----
     async function carregarReports() {
       try {
-        const res = await fetch('/api/relatorios');
-        if (!res.ok) throw new Error('Servidor offline');
-        reports = await res.json();
+        // Busca sem imagem_base64 para carregamento rápido
+        // A foto é carregada de forma lazy ao abrir o popup
+        const { data, error } = await db
+          .from('reports')
+          .select('id,tipo,lat,lng,endereco,descricao,timestamp,status')
+          .order('timestamp', { ascending: false });
+        if (error) throw error;
+        reports = data || [];
         renderizarMarcadores();
       } catch {
         reports = [];
@@ -375,32 +417,68 @@
     function renderizarMarcadores() {
       camada.clearLayers();
 
+      // Reseta o cache de foto: novos marcadores precisam carregar a foto novamente
+      reports.forEach(r => { r._imgLoaded = false; });
+
       // Reports
       reports.forEach(r => {
-        if (!filtrosAtivos.has(r.tipo)) return; // pula se filtro estiver desligado
+        if (!filtrosAtivos.has(r.tipo)) return;
 
         const emoji = EMOJIS[r.tipo] || '📌';
-        const m     = L.marker([r.lat, r.lng], { icon: criarIcone(emoji) });
+        // Verifica se este report é favorito do usuário
+        const ehFavorito = getUsuarioLogado() && favoritos.some(f => f.lat === r.lat && f.lng === r.lng);
+        const m = L.marker([r.lat, r.lng], { icon: criarIcone(emoji, ehFavorito) });
         const data  = new Date(r.timestamp).toLocaleString('pt-BR');
-        const fotoHtml = r.imagem_base64 ? `<img src="${r.imagem_base64}" class="popup-foto">` : '';
 
-        m.bindPopup(`
-          <div style="min-width:200px">
-            <div class="popup-titulo">${emoji} ${r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1)}</div>
-            <div class="popup-sub">📍 ${r.endereco || ''}</div>
-            ${fotoHtml}
-            ${r.descricao ? `<div class="popup-desc">${r.descricao}</div>` : ''}
-            <div class="popup-data">${data}</div>
-            <button class="popup-btn-fav" onclick="abrirFavoritoDoMapa(${r.lat},${r.lng},'${(r.endereco||'').replace(/'/g,"\\'")}')">❤️ Salvar nos favoritos</button>
-          </div>
-        `);
+        // Função que monta o HTML do popup (com ou sem foto)
+        function buildPopup(imgHtml = '') {
+          // Botão muda conforme o estado de favorito
+          const btnFav = ehFavorito
+            ? `<button class="popup-btn-fav popup-btn-desfav" onclick="deletarFavoritoDoMapa(${r.lat},${r.lng})">🗑️ Remover dos favoritos</button>`
+            : `<button class="popup-btn-fav" onclick="abrirFavoritoDoMapa(${r.lat},${r.lng},'${(r.endereco||'').replace(/'/g,"\\'")}')">❤️ Salvar nos favoritos</button>`;
+          return `
+            <div style="min-width:200px">
+              <div class="popup-titulo">${emoji} ${r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1)}</div>
+              <div class="popup-sub">📍 ${r.endereco || ''}</div>
+              ${imgHtml}
+              ${r.descricao ? `<div class="popup-desc">${r.descricao}</div>` : ''}
+              <div class="popup-data">${data}</div>
+              ${btnFav}
+            </div>
+          `;
+        }
+
+        m.bindPopup(buildPopup()); // Popup inicial sem foto (rápido)
+
+        // Lazy load da foto ao abrir o popup
+        m.on('popupopen', async () => {
+          if (r._imgLoaded) return; // já carregou antes
+          r._imgLoaded = true;
+          try {
+            const { data: imgData } = await db
+              .from('reports')
+              .select('imagem_base64')
+              .eq('id', r.id)
+              .single();
+            if (imgData?.imagem_base64) {
+              const imgHtml = `<img src="${imgData.imagem_base64}" class="popup-foto">`;
+              m.setPopupContent(buildPopup(imgHtml));
+            }
+          } catch {}
+        });
+
         camada.addLayer(m);
       });
 
-      // Favoritos
-      if (filtrosAtivos.has('favorito')) {
-        favoritos.forEach(f => {
-          const m = L.marker([f.lat, f.lng], { icon: criarIcone(f.emoji) });
+      // Favoritos: só exibe se o usuário estiver logado
+      // (os marcadores de favorito já aparecem como badge nos reports acima)
+      // Aqui mostramos apenas favoritos que NÃO têm report correspondente
+      if (filtrosAtivos.has('favorito') && getUsuarioLogado()) {
+        const reportPositions = new Set(reports.map(r => `${r.lat},${r.lng}`));
+        favoritos
+          .filter(f => !reportPositions.has(`${f.lat},${f.lng}`))
+          .forEach(f => {
+          const m = L.marker([f.lat, f.lng], { icon: criarIcone(f.emoji, true) });
           m.bindPopup(`
             <div style="min-width:180px">
               <div class="popup-titulo">${f.emoji} ${f.nome}</div>
@@ -484,3 +562,16 @@
     carregarReports();
     carregarFavoritos();
     minhaLocalizacao(true);
+
+    // Realtime: atualiza marcadores automaticamente quando admin
+    // aprovar, reprovar ou deletar qualquer report (sem recarregar a página)
+    db.channel('usuario-reports')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'reports'
+      }, () => {
+        carregarReports();
+      })
+      .subscribe();
+

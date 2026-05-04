@@ -1,0 +1,16 @@
+# Node.js local (não vai para o Vercel)
+node-v20.10.0-linux-x64/
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Servidor local (não necessário na Vercel)
+server.py
+*.db
+relatorios.db
+
+# OS
+.DS_Store
+Thumbs.db

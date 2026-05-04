@@ -19,7 +19,7 @@
     <input class="login-campo" id="loginUsuario" type="text" placeholder="Usuário" autocomplete="off">
     <input class="login-campo" id="loginSenha" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')fazerLogin()">
     <button type="button" class="btn-login" onclick="fazerLogin();">Entrar</button>
-    <button type="button" class="btn-secundario" style="width:100%; margin-top:8px; font-weight:600;" onclick="window.location.href='usuario.html'">⬅️ Voltar ao Início</button>
+    <button type="button" class="btn-secundario" style="width:100%; margin-top:8px; font-weight:600;" onclick="window.location.href='index.html'">⬅️ Voltar ao Início</button>
     <div class="login-erro" id="loginErro">❌ Usuário ou senha incorretos.</div>
   </div>
 
@@ -56,7 +56,6 @@
 
   <div class="navbar-btns">
     <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
-    <button class="btn-nav" onclick="abrirModal('modalNovoReport')">➕ Novo Report</button>
     <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
   </div>
 </div>
@@ -137,7 +136,7 @@
     <label class="btn-foto" for="fotoNovoReport">
       📸 Tirar foto / Escolher da galeria
     </label>
-    <input type="file" id="fotoNovoReport" accept="image/*" capture="environment" style="display:none" onchange="previewFotoAdmin(this)">
+    <input type="file" id="fotoNovoReport" accept="image/*" style="display:none" onchange="previewFotoAdmin(this)">
     <img id="previewFotoAdmin" src="" style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:150px;object-fit:cover;">
 
     <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
@@ -153,6 +152,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="js/admin.js?v=7"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+
+<script src="js/admin.js?v=8"></script>
 </body>
 </html>
