@@ -240,7 +240,13 @@
       document.getElementById('enderecoFav').value    = 'Detectando...';
       document.getElementById('tipoReport').value     = '';
       document.getElementById('descReport').value     = '';
-      document.getElementById('previewFoto').style.display = 'none';
+      // Limpa ambos os inputs de foto e o preview
+      const prev = document.getElementById('previewFoto');
+      if (prev) { prev.src = ''; prev.style.display = 'none'; }
+      const ic = document.getElementById('fotoReportCamera');
+      const ig = document.getElementById('fotoReportGaleria');
+      if (ic) ic.value = '';
+      if (ig) ig.value = '';
 
       abrirModal('modalReport');
 
@@ -289,13 +295,16 @@
         status:    'pendente'
       };
 
-      // Converte foto para base64 se tiver
-      const fotoInput = document.getElementById('fotoReport');
-      if (fotoInput.files[0]) {
+      // Pega a foto de qualquer um dos dois inputs (câmera ou galeria)
+      const fotoCamera  = document.getElementById('fotoReportCamera');
+      const fotoGaleria = document.getElementById('fotoReportGaleria');
+      const fotoArquivo = fotoCamera?.files[0] || fotoGaleria?.files[0] || null;
+
+      if (fotoArquivo) {
         payload.imagem_base64 = await new Promise(res => {
           const r = new FileReader();
           r.onload = e => res(e.target.result);
-          r.readAsDataURL(fotoInput.files[0]);
+          r.readAsDataURL(fotoArquivo);
         });
       }
 
@@ -303,6 +312,13 @@
         const { error } = await db.from('reports').insert(payload);
         if (error) throw error;
         fecharModal('modalReport');
+        // Limpa os inputs de foto após envio
+        const ic = document.getElementById('fotoReportCamera');
+        const ig = document.getElementById('fotoReportGaleria');
+        const pv = document.getElementById('previewFoto');
+        if (ic) ic.value = '';
+        if (ig) ig.value = '';
+        if (pv) { pv.src = ''; pv.style.display = 'none'; }
         await carregarReports();
         alert('✅ Report enviado! Obrigado por contribuir!');
       } catch {

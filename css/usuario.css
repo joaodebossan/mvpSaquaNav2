@@ -315,21 +315,49 @@
     .campo::placeholder { color: var(--muted); }
     textarea.campo { height: 70px; resize: none; }
 
-    .btn-foto {
-      width: 100%;
+    /* Seletor de origem da foto — dois botões lado a lado */
+    .foto-escolha {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn-foto-opcao {
+      flex: 1;
       background: var(--input);
       border: 1.5px dashed var(--border);
       border-radius: 12px;
-      padding: 12px;
+      padding: 12px 8px;
       color: var(--text2);
       font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: 6px;
+      text-align: center;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      user-select: none;
     }
+
+    /* Câmera — azul */
+    .btn-camera {
+      border-color: #90caf9;
+      color: #1565c0;
+    }
+    .btn-camera:hover { background: #e3f2fd; border-color: #1565c0; }
+    body.dark .btn-camera { border-color: #1565c0; color: #90caf9; }
+    body.dark .btn-camera:hover { background: #0d2a4a; }
+
+    /* Galeria — roxo */
+    .btn-galeria {
+      border-color: #ce93d8;
+      color: #6a1b9a;
+    }
+    .btn-galeria:hover { background: #f3e5f5; border-color: #6a1b9a; }
+    body.dark .btn-galeria { border-color: #6a1b9a; color: #ce93d8; }
+    body.dark .btn-galeria:hover { background: #2d1a3a; }
 
     .btn-primario {
       width: 100%;

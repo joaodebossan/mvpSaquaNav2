@@ -96,11 +96,20 @@
       <textarea class="campo" id="descReport" placeholder="Ex: Buraco enorme na esquina, cuidado!"></textarea>
 
       <label class="campo-label">Foto (opcional)</label>
-      <label class="btn-foto" for="fotoReport">
-        📸 Tirar foto / Escolher da galeria
-      </label>
-      <input type="file" id="fotoReport" accept="image/*" style="display:none" onchange="previewFoto(this)">
+      <div class="foto-escolha">
+        <label class="btn-foto-opcao btn-camera" for="fotoReportCamera">
+          📷 Câmera
+        </label>
+        <label class="btn-foto-opcao btn-galeria" for="fotoReportGaleria">
+          🖼️ Galeria
+        </label>
+      </div>
+      <!-- input câmera: abre diretamente a câmera traseira -->
+      <input type="file" id="fotoReportCamera"  accept="image/*" capture="environment" style="display:none" onchange="previewFoto(this)">
+      <!-- input galeria: abre o seletor de fotos -->
+      <input type="file" id="fotoReportGaleria" accept="image/*" style="display:none" onchange="previewFoto(this)">
       <img id="previewFoto" src="" style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:150px;object-fit:cover;">
+
 
       <button class="btn-primario" onclick="salvarReport()">✅ Enviar Report</button>
       <button class="btn-secundario" onclick="fecharModal('modalReport')">Cancelar</button>
