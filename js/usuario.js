@@ -566,9 +566,15 @@
       });
     });
 
-    // Dica some depois de 10 segundos
+    // Dica: texto diferente para mobile (touch) e desktop (mouse)
+    const ehTouch = window.matchMedia('(pointer: coarse)').matches;
+    const dica = document.getElementById('dica');
+    dica.textContent = ehTouch
+      ? '📍 Pressione e segure para marcar um pin'
+      : '🖱️ Dê dois cliques no mapa para adicionar um pin';
+
+    // Some depois de 10 segundos
     setTimeout(() => {
-      const dica = document.getElementById('dica');
       dica.style.opacity = '0';
       setTimeout(() => dica.remove(), 500);
     }, 10000);
