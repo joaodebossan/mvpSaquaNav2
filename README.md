@@ -1,117 +1,119 @@
 # SaquaNav
 
-SaquaNav is a community-driven map application built for the city of Saquarema, RJ, Brazil. It allows residents to report road incidents, public works, traffic, accidents and other events directly on an interactive map. Administrators can review, approve and manage reports in real time through a dedicated panel.
+SaquaNav e uma aplicacao de mapa colaborativo desenvolvida para a cidade de Saquarema, RJ. Permite que moradores registrem ocorrencias como obras, transito, acidentes, buracos e eventos diretamente no mapa interativo. Administradores podem revisar, aprovar e gerenciar os registros em tempo real por meio de um painel dedicado.
 
 ---
 
-## Table of Contents
+## Sumario
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Database Schema](#database-schema)
-- [Getting Started](#getting-started)
-- [Deployment](#deployment)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## Overview
-
-SaquaNav operates as a fully static front-end application. There is no custom back-end server. All data persistence is handled by [Supabase](https://supabase.com), which provides a managed PostgreSQL database with a RESTful API and real-time WebSocket subscriptions. The application is hosted on [Vercel](https://vercel.com) and redeployed automatically on every push to the `main` branch.
+- [Visao Geral](#visao-geral)
+- [Funcionalidades](#funcionalidades)
+- [Arquitetura](#arquitetura)
+- [Tecnologias](#tecnologias)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Banco de Dados](#banco-de-dados)
+- [Executando Localmente](#executando-localmente)
+- [Deploy](#deploy)
+- [Configuracao](#configuracao)
+- [Contribuindo](#contribuindo)
+- [Licenca](#licenca)
 
 ---
 
-## Features
+## Visao Geral
 
-### User Interface
-
-- Interactive map powered by [Leaflet.js](https://leafletjs.com) with OpenStreetMap tiles.
-- Create reports by pressing and holding (mobile) or double-clicking (desktop) on the map.
-- Report types: roadworks, traffic, accidents, events, potholes.
-- Optional photo attachment with separate camera and gallery buttons on mobile.
-- Automatic address detection via reverse geocoding (Nominatim API).
-- Personal favorites system: save and manage locations per user account.
-- Real-time map updates when administrators approve, reject or delete reports.
-- Light and dark mode support with persistent theme preference.
-- Search bar with address autocomplete.
-- Location filter buttons to toggle individual event categories.
-- Favorites badge displayed on report markers when the user is logged in.
-
-### Administrator Interface
-
-- Secure login panel separate from the user interface.
-- Live list of all submitted reports with horizontal card carousel on mobile.
-- Approve, reject or delete reports with immediate Supabase updates.
-- Lazy-loading photo viewer in both list cards and map popups.
-- Manual report creation by long-pressing or double-clicking the map.
-- Real-time report updates via Supabase Realtime WebSocket channel.
-- Statistics panel showing total, pending, approved and rejected counts.
+O SaquaNav e uma aplicacao front-end estatica sem servidor proprio. Toda a persistencia de dados e gerenciada pelo [Supabase](https://supabase.com), que fornece um banco PostgreSQL gerenciado com API REST e assinaturas em tempo real via WebSocket. A aplicacao e hospedada na [Vercel](https://vercel.com) e redeploya automaticamente a cada push para o branch `main`.
 
 ---
 
-## Architecture
+## Funcionalidades
+
+### Interface do Usuario
+
+- Mapa interativo com [Leaflet.js](https://leafletjs.com) e tiles do OpenStreetMap.
+- Criacao de registros pressionando e segurando (mobile) ou com duplo clique (desktop) no mapa.
+- Tipos de ocorrencia: obras, transito, acidente, evento e buraco.
+- Anexo de foto com botoes separados para camera e galeria no mobile.
+- Deteccao automatica de endereco via geocodificacao reversa (API Nominatim).
+- Sistema de favoritos pessoal por conta de usuario, com armazenamento isolado por nome de login.
+- Atualizacao em tempo real dos marcadores no mapa quando o administrador aprova, reprova ou exclui um registro.
+- Suporte a modo claro e escuro com preferencia salva no navegador.
+- Barra de busca com autocompletar de enderecos.
+- Filtros de categoria para exibir ou ocultar tipos de ocorrencia no mapa.
+- Badge de favorito exibido diretamente sobre o marcador do evento quando o usuario estiver logado.
+
+### Interface do Administrador
+
+- Painel de login separado da interface do usuario.
+- Lista de todos os registros submetidos com carrossel horizontal de cards no mobile.
+- Aprovacao, reprovacao e exclusao de registros com atualizacao imediata no Supabase.
+- Carregamento lazy de fotos nos cards da lista e nos popups do mapa.
+- Criacao manual de registros via clique longo ou duplo clique no mapa.
+- Atualizacoes em tempo real via canal Supabase Realtime (WebSocket).
+- Painel de estatisticas com totais de registros pendentes, aprovados e reprovados.
+
+---
+
+## Arquitetura
 
 ```
-Browser (User / Admin)
-        |
-        | HTTPS
-        v
-   Vercel CDN
-   (Static HTML, CSS, JS)
-        |
-        | Supabase JS SDK (REST + WebSocket)
-        v
+Navegador (Usuario / Admin)
+          |
+          | HTTPS
+          v
+     Vercel CDN
+  (HTML, CSS, JS estaticos)
+          |
+          | Supabase JS SDK (REST + WebSocket)
+          v
   Supabase (PostgreSQL)
-  - reports table
-  - Row Level Security policies
-  - Realtime publication
+  - tabela reports
+  - politicas de Row Level Security
+  - publicacao Realtime
 ```
 
-The application uses the Supabase JavaScript client library (`@supabase/supabase-js`) loaded via CDN. No build step or bundler is required. Deployments are triggered automatically by GitHub pushes.
+A aplicacao utiliza a biblioteca cliente do Supabase (`@supabase/supabase-js`) carregada via CDN. Nao e necessario etapa de build nem bundler. Os deploys sao acionados automaticamente por pushes no GitHub.
 
 ---
 
-## Tech Stack
+## Tecnologias
 
-| Layer | Technology |
+| Camada | Tecnologia |
 |---|---|
-| Front-end | Vanilla HTML5, CSS3, JavaScript (ES2020+) |
-| Map | Leaflet.js 1.9.4 |
-| Database | Supabase (PostgreSQL) |
-| Real-time | Supabase Realtime (WebSocket) |
-| Geocoding | OpenStreetMap Nominatim API |
-| Hosting | Vercel (static site) |
-| Version control | Git / GitHub |
+| Front-end | HTML5, CSS3, JavaScript (ES2020+) vanilla |
+| Mapa | Leaflet.js 1.9.4 |
+| Banco de dados | Supabase (PostgreSQL) |
+| Tempo real | Supabase Realtime (WebSocket) |
+| Geocodificacao | OpenStreetMap Nominatim API |
+| Hospedagem | Vercel (site estatico) |
+| Controle de versao | Git / GitHub |
 
 ---
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
 SaquaNav-Mobile/
-├── index.html              # User-facing page
-├── admin.html              # Administrator panel
-├── vercel.json             # Vercel deployment configuration
+├── index.html              # Pagina do usuario final
+├── admin.html              # Painel do administrador
+├── vercel.json             # Configuracao de deploy na Vercel
 ├── .gitignore
 ├── css/
-│   ├── usuario.css         # Styles for the user interface
-│   └── admin.css           # Styles for the admin interface
+│   ├── usuario.css         # Estilos da interface do usuario
+│   └── admin.css           # Estilos do painel administrativo
 └── js/
-    ├── supabase-config.js  # Supabase client initialization (shared)
-    ├── usuario.js          # User interface logic
-    └── admin.js            # Administrator panel logic
+    ├── supabase-config.js  # Inicializacao do cliente Supabase (compartilhado)
+    ├── usuario.js          # Logica da interface do usuario
+    └── admin.js            # Logica do painel administrativo
 ```
 
 ---
 
-## Database Schema
+## Banco de Dados
 
-The application uses a single table in Supabase.
+A aplicacao utiliza uma unica tabela no Supabase.
+
+### Criacao da Tabela
 
 ```sql
 CREATE TABLE reports (
@@ -127,22 +129,22 @@ CREATE TABLE reports (
 );
 ```
 
-### Row Level Security Policies
-
-The following policies allow public read access and authenticated write access. Adjust these policies according to your security requirements before going to production.
+### Politicas de Seguranca (Row Level Security)
 
 ```sql
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public read"   ON reports FOR SELECT USING (true);
-CREATE POLICY "Public insert" ON reports FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admin update"  ON reports FOR UPDATE USING (true);
-CREATE POLICY "Admin delete"  ON reports FOR DELETE USING (true);
+CREATE POLICY "Leitura publica"  ON reports FOR SELECT USING (true);
+CREATE POLICY "Insercao publica" ON reports FOR INSERT WITH CHECK (true);
+CREATE POLICY "Update admin"     ON reports FOR UPDATE USING (true);
+CREATE POLICY "Delete admin"     ON reports FOR DELETE USING (true);
 ```
 
-### Realtime Publication
+> **Aviso:** As politicas acima permitem acesso publico total para fins de MVP. Em producao, restrinja as operacoes de UPDATE e DELETE a usuarios autenticados com perfil de administrador.
 
-To enable real-time updates, add the `reports` table to the Supabase Realtime publication:
+### Publicacao Realtime
+
+Para habilitar atualizacoes em tempo real, adicione a tabela `reports` a publicacao do Supabase Realtime:
 
 ```sql
 ALTER PUBLICATION supabase_realtime ADD TABLE reports;
@@ -150,87 +152,84 @@ ALTER PUBLICATION supabase_realtime ADD TABLE reports;
 
 ---
 
-## Getting Started
+## Executando Localmente
 
-### Prerequisites
+Os tiles do OpenStreetMap exigem um cabecalho HTTP `Referer`, o que impede abrir o arquivo diretamente no navegador via `file://`. Utilize um servidor local.
 
-- A modern web browser.
-- A [Supabase](https://supabase.com) project with the `reports` table created as described above.
-- Python 3 (optional, for local development server).
-
-### Running Locally
-
-Because OpenStreetMap tiles require an HTTP `Referer` header, the application cannot be opened directly from the file system. Use a local web server instead.
+### Com Python (recomendado)
 
 ```bash
-# Navigate to the project directory
 cd "SaquaNav-Mobile"
-
-# Start a local server on port 8080
 python3 -m http.server 8080
 ```
 
-Then open [http://localhost:8080](http://localhost:8080) in your browser.
+Acesse em [http://localhost:8080](http://localhost:8080).
 
-> **Note:** The admin panel is available at [http://localhost:8080/admin.html](http://localhost:8080/admin.html).
-
----
-
-## Deployment
-
-The project is configured to deploy automatically to Vercel. The `vercel.json` file at the project root instructs Vercel to serve the project as a static site with clean URLs.
-
-### Steps
-
-1. Push the repository to GitHub.
-2. Log in to [vercel.com](https://vercel.com) and import the repository.
-3. Set the **Framework Preset** to `Other`.
-4. Leave the build command and output directory fields empty.
-5. Click **Deploy**.
-
-Every subsequent `git push origin main` will trigger an automatic redeploy with zero downtime.
+O painel administrativo esta disponivel em [http://localhost:8080/admin.html](http://localhost:8080/admin.html).
 
 ---
 
-## Configuration
+## Deploy
 
-All Supabase credentials are stored in `js/supabase-config.js`. This file is loaded before the main application scripts in both `index.html` and `admin.html`.
+O projeto esta configurado para deploy automatico na Vercel. O arquivo `vercel.json` na raiz instrui a Vercel a servir o projeto como site estatico com URLs limpas.
+
+### Passo a Passo
+
+1. Envie o repositorio para o GitHub.
+2. Acesse [vercel.com](https://vercel.com) e importe o repositorio.
+3. Defina o **Framework Preset** como `Other`.
+4. Deixe os campos de Build Command e Output Directory em branco.
+5. Clique em **Deploy**.
+
+A partir dai, cada `git push origin main` dispara um redeploy automatico sem interrupcao do servico.
+
+### Enviando Alteracoes
+
+```bash
+git add -A
+git commit -m "tipo: descricao da alteracao"
+git push origin main
+```
+
+---
+
+## Configuracao
+
+As credenciais do Supabase ficam no arquivo `js/supabase-config.js`, carregado antes dos scripts principais em ambas as paginas.
 
 ```js
 // js/supabase-config.js
-const SUPABASE_URL = 'https://your-project-ref.supabase.co';
-const SUPABASE_KEY = 'your-anon-public-key';
+const SUPABASE_URL = 'https://seu-projeto.supabase.co';
+const SUPABASE_KEY = 'sua-chave-anon-publica';
 
 const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 ```
 
-> **Warning:** The `anon` key used here is the public API key. It is safe to expose in client-side code as long as Row Level Security policies are correctly configured on all tables.
+> A chave `anon` e a chave publica da API. E seguro expor em codigo client-side desde que as politicas de Row Level Security estejam corretamente configuradas.
 
 ---
 
-## Contributing
+## Contribuindo
 
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature-name`.
-3. Commit your changes: `git commit -m "feat: description of change"`.
-4. Push to your fork: `git push origin feature/your-feature-name`.
-5. Open a pull request against the `main` branch.
+1. Crie um fork do repositorio.
+2. Crie um branch para a sua alteracao: `git checkout -b feature/nome-da-funcionalidade`.
+3. Faca o commit das alteracoes: `git commit -m "feat: descricao"`.
+4. Envie para o seu fork: `git push origin feature/nome-da-funcionalidade`.
+5. Abra um Pull Request contra o branch `main`.
 
-### Commit Message Convention
+### Convencao de Commits
 
-This project follows a simplified version of the [Conventional Commits](https://www.conventionalcommits.org/) specification.
-
-| Prefix | Purpose |
+| Prefixo | Uso |
 |---|---|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `style:` | CSS or visual changes |
-| `refactor:` | Code restructuring without behavior change |
-| `docs:` | Documentation updates |
+| `feat:` | Nova funcionalidade |
+| `fix:` | Correcao de bug |
+| `style:` | Alteracoes visuais ou de CSS |
+| `refactor:` | Reestruturacao de codigo sem mudanca de comportamento |
+| `docs:` | Atualizacoes de documentacao |
 
 ---
 
-## License
+## Licenca
 
-This project is developed for the city of Saquarema, RJ, Brazil. All rights reserved.
+Projeto desenvolvido para a cidade de Saquarema, RJ, Brasil. Todos os direitos reservados.
