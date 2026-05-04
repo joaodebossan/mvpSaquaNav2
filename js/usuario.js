@@ -566,12 +566,12 @@
       });
     });
 
-    // Dica some depois de 4 segundos
+    // Dica some depois de 10 segundos
     setTimeout(() => {
       const dica = document.getElementById('dica');
       dica.style.opacity = '0';
       setTimeout(() => dica.remove(), 500);
-    }, 4000);
+    }, 10000);
 
     // ---- INICIAR ----
     atualizarEstadoLogin();
