@@ -72,6 +72,8 @@
     <!-- Abas -->
     <div class="sidebar-tabs">
       <div class="stab ativo" onclick="setStab(this,'reports')">📋 Reports</div>
+      <div class="stab" onclick="setStab(this,'canteiros')">🏗️ Canteiros</div>
+      <div class="stab" onclick="setStab(this,'frota')">🚛 Frota</div>
       <div class="stab" onclick="setStab(this,'stats')">📊 Stats</div>
     </div>
 
@@ -107,6 +109,28 @@
         <strong style="color:var(--text)">Tipos mais reportados:</strong>
         <div id="stats-tipos"></div>
       </div>
+
+      <!-- Eixos Temáticos -->
+      <div style="font-size:13px;color:var(--text2);line-height:1.8; margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;">
+        <strong style="color:var(--text)">Relatórios (Visão Geral):</strong>
+        <div id="stats-eixos" class="eixos-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <!-- Aba: Canteiros -->
+    <div class="sidebar-body" id="tab-canteiros" style="display:none">
+      <button class="btn-primario" style="width:100%; margin-bottom:12px;" onclick="iniciarNovoCanteiro()">➕ Adicionar Canteiro</button>
+      <div id="listaCanteiros">
+        <div class="vazio">Carregando canteiros...</div>
+      </div>
+    </div>
+
+    <!-- Aba: Frota -->
+    <div class="sidebar-body" id="tab-frota" style="display:none">
+      <button class="btn-primario" style="width:100%; margin-bottom:12px;" onclick="iniciarNovaFrota()">➕ Adicionar Veículo</button>
+      <div id="listaFrota">
+        <div class="vazio">Carregando frota...</div>
+      </div>
     </div>
 
   </div>
@@ -119,7 +143,6 @@
 
     <label class="campo-label">Tipo de ocorrência</label>
     <select class="campo" id="tipoNovoReport">
-      <option value="obras">🚧 Obra</option>
       <option value="transito">🚗 Trânsito</option>
       <option value="acidente">🚨 Acidente</option>
       <option value="evento">🎉 Evento</option>
@@ -150,7 +173,101 @@
   </div>
 </div>
 
+<!-- MODAL: ADICIONAR CANTEIRO -->
+<div class="modal-bg" id="modalNovoCanteiro">
+  <div class="modal-box">
+    <div class="modal-titulo">🏗️ Novo Canteiro de Obra</div>
+
+    <label class="campo-label">Nome da Obra</label>
+    <input class="campo" id="nomeCanteiro" type="text" placeholder="Ex: Pavimentação Rua X">
+
+    <label class="campo-label">Status</label>
+    <select class="campo" id="statusCanteiro">
+      <option value="planejado">⏳ Planejado</option>
+      <option value="em andamento">🚧 Em Andamento</option>
+      <option value="paralisado">🛑 Paralisado</option>
+      <option value="concluído">✅ Concluído</option>
+    </select>
+
+    <label class="campo-label">Funcionários e Maquinário (Resumo)</label>
+    <textarea class="campo" id="detalhesCanteiro" placeholder="Ex: 15 operários, 2 retroescavadeiras..."></textarea>
+
+    <label class="campo-label">Adicionar Foto</label>
+    <input type="file" id="fotoNovoCanteiro" class="campo" accept="image/*" onchange="previewFotoCanteiro(this)">
+    <img id="previewFotoCanteiro" style="display:none; width:100%; border-radius:8px; margin-bottom:12px;">
+
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
+      💡 A localização do canteiro poderá ser definida separadamente clicando no mapa.
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-primario" onclick="salvarCanteiro()">💾 Salvar</button>
+      <button class="btn-secundario" onclick="fecharModal('modalNovoCanteiro')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADICIONAR/EDITAR FROTA -->
+<div class="modal-bg" id="modalNovaFrota">
+  <div class="modal-box">
+    <div class="modal-titulo" id="tituloFrota">🚛 Novo Veículo (Frota)</div>
+    
+    <input type="hidden" id="idFrota">
+
+    <label class="campo-label">Placa</label>
+    <input class="campo" id="placaFrota" type="text" placeholder="Ex: ABC-1234">
+
+    <label class="campo-label">Veículo (Modelo/Tipo)</label>
+    <input class="campo" id="veiculoFrota" type="text" placeholder="Ex: Caminhão Caçamba - VW">
+
+    <label class="campo-label">Status</label>
+    <select class="campo" id="statusFrota">
+      <option value="em serviço">🟢 Em Serviço</option>
+      <option value="parado">🟡 Parado</option>
+      <option value="manutenção">🔴 Em Manutenção</option>
+    </select>
+
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
+      💡 A posição de cada veículo poderá ser atualizada diretamente no mapa.
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-primario" onclick="salvarFrota()">💾 Salvar</button>
+      <button class="btn-secundario" onclick="fecharModal('modalNovaFrota')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EXPORTAR RELATÓRIO -->
+<div class="modal-bg" id="modalExportar">
+  <div class="modal-box">
+    <div class="modal-titulo">📄 Exportar Relatório</div>
+    
+    <div style="font-size:14px;color:var(--text);margin-bottom:16px;">
+      Eixo Selecionado: <strong id="eixoExportacao" style="color:var(--accent);"></strong>
+    </div>
+
+    <div style="font-size:12px;color:var(--text2);margin-bottom:20px;">
+      Selecione o formato desejado para o download do relatório.
+    </div>
+
+    <div class="modal-btns" style="flex-direction: column; gap: 10px;">
+      <button class="btn-primario" onclick="gerarRelatorio('pdf')" style="background:#dc3545;">📄 Exportar como PDF</button>
+      <button class="btn-primario" onclick="gerarRelatorio('excel')" style="background:#28a745;">📊 Exportar como Excel (CSV)</button>
+      <button class="btn-secundario" onclick="fecharModal('modalExportar')" style="margin-top:8px;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- jsPDF e AutoTable para gerar PDF no Frontend -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  // O autotable exige que a variável global window.jsPDF exista
+  window.jsPDF = window.jspdf.jsPDF;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
