@@ -600,26 +600,8 @@
   function abrirModal(id)    { document.getElementById(id).classList.add('ativo'); }
   function fecharModal(id)   { document.getElementById(id).classList.remove('ativo'); }
 
-  // Mede o card real no DOM e ajusta a altura da sidebar para caber exatamente
+  // Atualiza o mapa no mobile (a altura da sidebar agora é fixa via CSS)
   function ajustarSidebarMobile() {
-    if (window.innerWidth > 700) return;
-
-    const sidebar  = document.querySelector('.sidebar');
-    const tabs     = document.querySelector('.sidebar-tabs');
-    const card     = document.querySelector('.sidebar-body .report-card');
-    if (!sidebar || !tabs || !card) return;
-
-    const tabsH = tabs.offsetHeight;       // altura real das abas
-    const cardH = card.scrollHeight;       // altura TOTAL do conteúdo do card (sem corte)
-    const buffer = 12;                     // pequena folga para não ficar justo
-
-    // Seta a variável CSS que o .sidebar usa para sua height
-    document.documentElement.style.setProperty(
-      '--sidebar-h',
-      `calc(${tabsH + cardH + buffer}px + env(safe-area-inset-bottom))`
-    );
-
-    // Força o mapa a recalcular o tamanho
     if (typeof mapa !== 'undefined') mapa.invalidateSize();
   }
 
