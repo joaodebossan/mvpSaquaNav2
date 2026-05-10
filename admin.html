@@ -1,281 +1,288 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SaquaNav Admin</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="css/admin.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>SaquaNav Admin</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/admin.css">
 </head>
+
 <body>
 
-<!-- TELA DE LOGIN -->
-<div class="tela-login" id="telaLogin">
-  <div class="login-logo"><img src="logo.png" alt="SaquaNav"></div>
-  <div class="login-sub">Painel Administrativo</div>
+  <!-- TELA DE LOGIN -->
+  <div class="tela-login" id="telaLogin">
+    <div class="login-logo"><img src="logo.png" alt="SaquaNav"></div>
+    <div class="login-sub">Painel Administrativo</div>
 
-  <div class="login-card">
-    <div class="login-titulo">🔐 Entrar como Admin</div>
-    <input class="login-campo" id="loginUsuario" type="text" placeholder="Usuário" autocomplete="off">
-    <input class="login-campo" id="loginSenha" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')fazerLogin()">
-    <button type="button" class="btn-login" onclick="fazerLogin();">Entrar</button>
-    <button type="button" class="btn-secundario" style="width:100%; margin-top:8px; font-weight:600;" onclick="window.location.href='index.html'">⬅️ Voltar ao Início</button>
-    <div class="login-erro" id="loginErro">❌ Usuário ou senha incorretos.</div>
-  </div>
-
-  <div style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:20px;">
-    Demo: usuário <strong style="color:rgba(255,255,255,0.6)">admin</strong> • senha <strong style="color:rgba(255,255,255,0.6)">saqua123</strong>
-  </div>
-</div>
-
-<!-- NAVBAR -->
-<div class="navbar">
-  <div class="logo-wrapper" style="position:relative;">
-    <div class="logo" onclick="toggleLogoMenu()" style="cursor:pointer;">
-      <img src="logo.png" alt="SaquaNav">
-      <span class="logo-badge">ADMIN</span>
+    <div class="login-card">
+      <div class="login-titulo">🔐 Entrar como Admin</div>
+      <input class="login-campo" id="loginUsuario" type="text" placeholder="Usuário" autocomplete="off">
+      <input class="login-campo" id="loginSenha" type="password" placeholder="Senha"
+        onkeydown="if(event.key==='Enter')fazerLogin()">
+      <button type="button" class="btn-login" onclick="fazerLogin();">Entrar</button>
+      <button type="button" class="btn-secundario" style="width:100%; margin-top:8px; font-weight:600;"
+        onclick="window.location.href='index.html'">⬅️ Voltar ao Início</button>
+      <div class="login-erro" id="loginErro">❌ Usuário ou senha incorretos.</div>
     </div>
-    <div class="logo-menu" id="logoMenu">
-      <div class="logo-menu-item text-danger" onclick="fazerLogoutAdmin(); toggleLogoMenu()">Sair do Painel</div>
+
+    <div style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:20px;">
+      Demo: usuário <strong style="color:rgba(255,255,255,0.6)">admin</strong> • senha <strong
+        style="color:rgba(255,255,255,0.6)">saqua123</strong>
     </div>
   </div>
 
-  <!-- Barra de busca -->
-  <div class="search-wrapper">
-    <span class="search-icon">🔍</span>
-    <input
-      class="search-input"
-      id="searchInput"
-      type="text"
-      placeholder="Buscar endereço em Saquarema..."
-      autocomplete="off"
-      oninput="buscarEndereco(this.value)"
-    >
-    <div class="search-results" id="searchResults"></div>
-  </div>
-
-  <div class="navbar-btns">
-    <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
-    <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
-  </div>
-</div>
-
-<!-- CONTEÚDO PRINCIPAL -->
-<div class="main">
-
-  <!-- Mapa -->
-  <div id="mapa"></div>
-
-  <!-- Painel lateral -->
-  <div class="sidebar">
-    <div class="sidebar-drag-handle" onclick="toggleSidebar()">
-      <div class="handle-bar"></div>
-    </div>
-
-    <!-- Abas -->
-    <div class="sidebar-tabs">
-      <div class="stab ativo" onclick="setStab(this,'reports')">📋 Reports</div>
-      <div class="stab" onclick="setStab(this,'canteiros')">🏗️ Canteiros</div>
-      <div class="stab" onclick="setStab(this,'frota')">🚛 Frota</div>
-      <div class="stab" onclick="setStab(this,'stats')">📊 Stats</div>
-    </div>
-
-    <!-- Aba: Reports dos usuários -->
-    <div class="sidebar-body" id="tab-reports">
-      <div id="listaReports">
-        <div class="vazio">Carregando reports...</div>
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo-wrapper" style="position:relative;">
+      <div class="logo" onclick="toggleLogoMenu()" style="cursor:pointer;">
+        <img src="logo.png" alt="SaquaNav">
+        <span class="logo-badge">ADMIN</span>
+      </div>
+      <div class="logo-menu" id="logoMenu">
+        <div class="logo-menu-item text-danger" onclick="fazerLogoutAdmin(); toggleLogoMenu()">Sair do Painel</div>
       </div>
     </div>
 
-    <!-- Aba: Estatísticas -->
-    <div class="sidebar-body" id="tab-stats" style="display:none">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-num" id="stat-total">0</div>
-          <div class="stat-label">Total de reports</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-pendentes" style="color:var(--warn)">0</div>
-          <div class="stat-label">Pendentes</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-aprovados" style="color:var(--ok)">0</div>
-          <div class="stat-label">Aprovados</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-recusados" style="color:var(--danger)">0</div>
-          <div class="stat-label">Recusados</div>
+    <!-- Barra de busca -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text" placeholder="Buscar endereço em Saquarema..."
+        autocomplete="off" oninput="buscarEndereco(this.value)">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="navbar-btns">
+      <button class="btn-nav" onclick="minhaLocalizacao()">📍 Localização</button>
+      <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙</button>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div class="main">
+
+    <!-- Mapa -->
+    <div id="mapa"></div>
+
+    <!-- Painel lateral -->
+    <div class="sidebar">
+      <div class="sidebar-drag-handle" onclick="toggleSidebar()">
+        <div class="handle-bar"></div>
+      </div>
+
+      <!-- Abas -->
+      <div class="sidebar-tabs">
+        <div class="stab ativo" onclick="setStab(this,'reports')">📋 Reports</div>
+        <div class="stab" onclick="setStab(this,'canteiros')">🏗️ Canteiros</div>
+        <div class="stab" onclick="setStab(this,'frota')">🚛 Frota</div>
+        <div class="stab" onclick="setStab(this,'stats')">📊 Dados</div>
+      </div>
+
+      <!-- Aba: Reports dos usuários -->
+      <div class="sidebar-body" id="tab-reports">
+        <div id="listaReports">
+          <div class="vazio">Carregando reports...</div>
         </div>
       </div>
 
-      <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-        <strong style="color:var(--text)">Tipos mais reportados:</strong>
-        <div id="stats-tipos"></div>
+      <!-- Aba: Estatísticas -->
+      <div class="sidebar-body" id="tab-stats" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-num" id="stat-total">0</div>
+            <div class="stat-label">Total de reports</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-pendentes" style="color:var(--warn)">0</div>
+            <div class="stat-label">Pendentes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-aprovados" style="color:var(--ok)">0</div>
+            <div class="stat-label">Aprovados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-recusados" style="color:var(--danger)">0</div>
+            <div class="stat-label">Recusados</div>
+          </div>
+        </div>
+
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          <strong style="color:var(--text)">Tipos mais reportados:</strong>
+          <div id="stats-tipos"></div>
+        </div>
+
+        <!-- Eixos Temáticos -->
+        <div
+          style="font-size:13px;color:var(--text2);line-height:1.8; margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;">
+          <strong style="color:var(--text)">Relatórios (Visão Geral):</strong>
+          <div id="stats-eixos" class="eixos-grid"
+            style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;"></div>
+        </div>
       </div>
 
-      <!-- Eixos Temáticos -->
-      <div style="font-size:13px;color:var(--text2);line-height:1.8; margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;">
-        <strong style="color:var(--text)">Relatórios (Visão Geral):</strong>
-        <div id="stats-eixos" class="eixos-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;"></div>
+      <!-- Aba: Canteiros -->
+      <div class="sidebar-body" id="tab-canteiros" style="display:none">
+        <button class="btn-primario" style="width:100%; margin-bottom:12px;" onclick="iniciarNovoCanteiro()">➕ Adicionar
+          Canteiro</button>
+        <div id="listaCanteiros">
+          <div class="vazio">Carregando canteiros...</div>
+        </div>
+      </div>
+
+      <!-- Aba: Frota -->
+      <div class="sidebar-body" id="tab-frota" style="display:none">
+        <button class="btn-primario" style="width:100%; margin-bottom:12px;" onclick="iniciarNovaFrota()">➕ Adicionar
+          Veículo</button>
+        <div id="listaFrota">
+          <div class="vazio">Carregando frota...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR REPORT MANUALMENTE -->
+  <div class="modal-bg" id="modalNovoReport">
+    <div class="modal-box">
+      <div class="modal-titulo">➕ Adicionar Report</div>
+
+      <label class="campo-label">Tipo de ocorrência</label>
+      <select class="campo" id="tipoNovoReport">
+        <option value="transito">🚗 Trânsito</option>
+        <option value="acidente">🚨 Acidente</option>
+        <option value="evento">🎉 Evento</option>
+        <option value="buraco">⚠️ Buraco na via</option>
+      </select>
+
+      <label class="campo-label">Endereço</label>
+      <input class="campo" id="endNovoReport" type="text" placeholder="Ex: Av. Salgado Filho, 100">
+
+      <label class="campo-label">Descrição</label>
+      <textarea class="campo" id="descNovoReport" placeholder="Ex: Buraco enorme, cuidado ao passar!"></textarea>
+
+      <label class="campo-label">Foto (opcional)</label>
+      <label class="btn-foto" for="fotoNovoReport">
+        📸 Tirar foto / Escolher da galeria
+      </label>
+      <input type="file" id="fotoNovoReport" accept="image/*" style="display:none" onchange="previewFotoAdmin(this)">
+      <img id="previewFotoAdmin" src=""
+        style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:150px;object-fit:cover;">
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
+        💡 Dica: Dê dois cliques no mapa para pegar a localização automaticamente!
+      </div>
+
+      <div class="modal-btns">
+        <button class="btn-primario" onclick="salvarNovoReport()">💾 Salvar</button>
+        <button class="btn-secundario" onclick="fecharModal('modalNovoReport')">Cancelar</button>
       </div>
     </div>
+  </div>
 
-    <!-- Aba: Canteiros -->
-    <div class="sidebar-body" id="tab-canteiros" style="display:none">
-      <button class="btn-primario" style="width:100%; margin-bottom:12px;" onclick="iniciarNovoCanteiro()">➕ Adicionar Canteiro</button>
-      <div id="listaCanteiros">
-        <div class="vazio">Carregando canteiros...</div>
+  <!-- MODAL: ADICIONAR CANTEIRO -->
+  <div class="modal-bg" id="modalNovoCanteiro">
+    <div class="modal-box">
+      <div class="modal-titulo">🏗️ Novo Canteiro de Obra</div>
+
+      <label class="campo-label">Nome da Obra</label>
+      <input class="campo" id="nomeCanteiro" type="text" placeholder="Ex: Pavimentação Rua X">
+
+      <label class="campo-label">Status</label>
+      <select class="campo" id="statusCanteiro">
+        <option value="planejado">⏳ Planejado</option>
+        <option value="em andamento">🚧 Em Andamento</option>
+        <option value="paralisado">🛑 Paralisado</option>
+        <option value="concluído">✅ Concluído</option>
+      </select>
+
+      <label class="campo-label">Funcionários e Maquinário (Resumo)</label>
+      <textarea class="campo" id="detalhesCanteiro" placeholder="Ex: 15 operários, 2 retroescavadeiras..."></textarea>
+
+      <label class="campo-label">Adicionar Foto</label>
+      <input type="file" id="fotoNovoCanteiro" class="campo" accept="image/*" onchange="previewFotoCanteiro(this)">
+      <img id="previewFotoCanteiro" style="display:none; width:100%; border-radius:8px; margin-bottom:12px;">
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
+        💡 A localização do canteiro poderá ser definida separadamente clicando no mapa.
+      </div>
+
+      <div class="modal-btns">
+        <button class="btn-primario" onclick="salvarCanteiro()">💾 Salvar</button>
+        <button class="btn-secundario" onclick="fecharModal('modalNovoCanteiro')">Cancelar</button>
       </div>
     </div>
+  </div>
 
-    <!-- Aba: Frota -->
-    <div class="sidebar-body" id="tab-frota" style="display:none">
-      <button class="btn-primario" style="width:100%; margin-bottom:12px;" onclick="iniciarNovaFrota()">➕ Adicionar Veículo</button>
-      <div id="listaFrota">
-        <div class="vazio">Carregando frota...</div>
+  <!-- MODAL: ADICIONAR/EDITAR FROTA -->
+  <div class="modal-bg" id="modalNovaFrota">
+    <div class="modal-box">
+      <div class="modal-titulo" id="tituloFrota">🚛 Novo Veículo (Frota)</div>
+
+      <input type="hidden" id="idFrota">
+
+      <label class="campo-label">Placa</label>
+      <input class="campo" id="placaFrota" type="text" placeholder="Ex: ABC-1234">
+
+      <label class="campo-label">Veículo (Modelo/Tipo)</label>
+      <input class="campo" id="veiculoFrota" type="text" placeholder="Ex: Caminhão Caçamba - VW">
+
+      <label class="campo-label">Status</label>
+      <select class="campo" id="statusFrota">
+        <option value="em serviço">🟢 Em Serviço</option>
+        <option value="parado">🟡 Parado</option>
+        <option value="manutenção">🔴 Em Manutenção</option>
+      </select>
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
+        💡 A posição de cada veículo poderá ser atualizada diretamente no mapa.
+      </div>
+
+      <div class="modal-btns">
+        <button class="btn-primario" onclick="salvarFrota()">💾 Salvar</button>
+        <button class="btn-secundario" onclick="fecharModal('modalNovaFrota')">Cancelar</button>
       </div>
     </div>
-
   </div>
-</div>
 
-<!-- MODAL: ADICIONAR REPORT MANUALMENTE -->
-<div class="modal-bg" id="modalNovoReport">
-  <div class="modal-box">
-    <div class="modal-titulo">➕ Adicionar Report</div>
+  <!-- MODAL: EXPORTAR RELATÓRIO -->
+  <div class="modal-bg" id="modalExportar">
+    <div class="modal-box">
+      <div class="modal-titulo">📄 Exportar Relatório</div>
 
-    <label class="campo-label">Tipo de ocorrência</label>
-    <select class="campo" id="tipoNovoReport">
-      <option value="transito">🚗 Trânsito</option>
-      <option value="acidente">🚨 Acidente</option>
-      <option value="evento">🎉 Evento</option>
-      <option value="buraco">⚠️ Buraco na via</option>
-    </select>
+      <div style="font-size:14px;color:var(--text);margin-bottom:16px;">
+        Eixo Selecionado: <strong id="eixoExportacao" style="color:var(--accent);"></strong>
+      </div>
 
-    <label class="campo-label">Endereço</label>
-    <input class="campo" id="endNovoReport" type="text" placeholder="Ex: Av. Salgado Filho, 100">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:20px;">
+        Selecione o formato desejado para o download do relatório.
+      </div>
 
-    <label class="campo-label">Descrição</label>
-    <textarea class="campo" id="descNovoReport" placeholder="Ex: Buraco enorme, cuidado ao passar!"></textarea>
-
-    <label class="campo-label">Foto (opcional)</label>
-    <label class="btn-foto" for="fotoNovoReport">
-      📸 Tirar foto / Escolher da galeria
-    </label>
-    <input type="file" id="fotoNovoReport" accept="image/*" style="display:none" onchange="previewFotoAdmin(this)">
-    <img id="previewFotoAdmin" src="" style="width:100%;border-radius:10px;margin-bottom:12px;display:none;max-height:150px;object-fit:cover;">
-
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
-      💡 Dica: Dê dois cliques no mapa para pegar a localização automaticamente!
-    </div>
-
-    <div class="modal-btns">
-      <button class="btn-primario" onclick="salvarNovoReport()">💾 Salvar</button>
-      <button class="btn-secundario" onclick="fecharModal('modalNovoReport')">Cancelar</button>
+      <div class="modal-btns" style="flex-direction: column; gap: 10px;">
+        <button class="btn-primario" onclick="gerarRelatorio('pdf')" style="background:#dc3545;">📄 Exportar como
+          PDF</button>
+        <button class="btn-primario" onclick="gerarRelatorio('excel')" style="background:#28a745;">📊 Exportar como
+          Excel (CSV)</button>
+        <button class="btn-secundario" onclick="fecharModal('modalExportar')" style="margin-top:8px;">Cancelar</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: ADICIONAR CANTEIRO -->
-<div class="modal-bg" id="modalNovoCanteiro">
-  <div class="modal-box">
-    <div class="modal-titulo">🏗️ Novo Canteiro de Obra</div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <label class="campo-label">Nome da Obra</label>
-    <input class="campo" id="nomeCanteiro" type="text" placeholder="Ex: Pavimentação Rua X">
+  <!-- jsPDF e AutoTable para gerar PDF no Frontend -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // O autotable exige que a variável global window.jsPDF exista
+    window.jsPDF = window.jspdf.jsPDF;
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    <label class="campo-label">Status</label>
-    <select class="campo" id="statusCanteiro">
-      <option value="planejado">⏳ Planejado</option>
-      <option value="em andamento">🚧 Em Andamento</option>
-      <option value="paralisado">🛑 Paralisado</option>
-      <option value="concluído">✅ Concluído</option>
-    </select>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
 
-    <label class="campo-label">Funcionários e Maquinário (Resumo)</label>
-    <textarea class="campo" id="detalhesCanteiro" placeholder="Ex: 15 operários, 2 retroescavadeiras..."></textarea>
-
-    <label class="campo-label">Adicionar Foto</label>
-    <input type="file" id="fotoNovoCanteiro" class="campo" accept="image/*" onchange="previewFotoCanteiro(this)">
-    <img id="previewFotoCanteiro" style="display:none; width:100%; border-radius:8px; margin-bottom:12px;">
-
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
-      💡 A localização do canteiro poderá ser definida separadamente clicando no mapa.
-    </div>
-
-    <div class="modal-btns">
-      <button class="btn-primario" onclick="salvarCanteiro()">💾 Salvar</button>
-      <button class="btn-secundario" onclick="fecharModal('modalNovoCanteiro')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: ADICIONAR/EDITAR FROTA -->
-<div class="modal-bg" id="modalNovaFrota">
-  <div class="modal-box">
-    <div class="modal-titulo" id="tituloFrota">🚛 Novo Veículo (Frota)</div>
-    
-    <input type="hidden" id="idFrota">
-
-    <label class="campo-label">Placa</label>
-    <input class="campo" id="placaFrota" type="text" placeholder="Ex: ABC-1234">
-
-    <label class="campo-label">Veículo (Modelo/Tipo)</label>
-    <input class="campo" id="veiculoFrota" type="text" placeholder="Ex: Caminhão Caçamba - VW">
-
-    <label class="campo-label">Status</label>
-    <select class="campo" id="statusFrota">
-      <option value="em serviço">🟢 Em Serviço</option>
-      <option value="parado">🟡 Parado</option>
-      <option value="manutenção">🔴 Em Manutenção</option>
-    </select>
-
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-6px;">
-      💡 A posição de cada veículo poderá ser atualizada diretamente no mapa.
-    </div>
-
-    <div class="modal-btns">
-      <button class="btn-primario" onclick="salvarFrota()">💾 Salvar</button>
-      <button class="btn-secundario" onclick="fecharModal('modalNovaFrota')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: EXPORTAR RELATÓRIO -->
-<div class="modal-bg" id="modalExportar">
-  <div class="modal-box">
-    <div class="modal-titulo">📄 Exportar Relatório</div>
-    
-    <div style="font-size:14px;color:var(--text);margin-bottom:16px;">
-      Eixo Selecionado: <strong id="eixoExportacao" style="color:var(--accent);"></strong>
-    </div>
-
-    <div style="font-size:12px;color:var(--text2);margin-bottom:20px;">
-      Selecione o formato desejado para o download do relatório.
-    </div>
-
-    <div class="modal-btns" style="flex-direction: column; gap: 10px;">
-      <button class="btn-primario" onclick="gerarRelatorio('pdf')" style="background:#dc3545;">📄 Exportar como PDF</button>
-      <button class="btn-primario" onclick="gerarRelatorio('excel')" style="background:#28a745;">📊 Exportar como Excel (CSV)</button>
-      <button class="btn-secundario" onclick="fecharModal('modalExportar')" style="margin-top:8px;">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- jsPDF e AutoTable para gerar PDF no Frontend -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-  // O autotable exige que a variável global window.jsPDF exista
-  window.jsPDF = window.jspdf.jsPDF;
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
-
-<script src="js/admin.js?v=8"></script>
+  <script src="js/admin.js?v=8"></script>
 </body>
+
 </html>
