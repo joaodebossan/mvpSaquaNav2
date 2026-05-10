@@ -600,6 +600,18 @@
   function abrirModal(id)    { document.getElementById(id).classList.add('ativo'); }
   function fecharModal(id)   { document.getElementById(id).classList.remove('ativo'); }
 
+  // Recolher/Expandir painel no mobile
+  window.toggleSidebar = function() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('recolhida');
+      // Espera a animação do CSS terminar (0.3s) para recalcular o mapa
+      setTimeout(() => {
+        if (typeof mapa !== 'undefined') mapa.invalidateSize();
+      }, 320);
+    }
+  };
+
   // Atualiza o mapa no mobile (a altura da sidebar agora é fixa via CSS)
   function ajustarSidebarMobile() {
     if (typeof mapa !== 'undefined') mapa.invalidateSize();
