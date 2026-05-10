@@ -280,7 +280,7 @@
 
   /* --- PAINEL LATERAL --- */
   .sidebar {
-    width: 320px;
+    width: 360px;
     background: var(--card);
     border-left: 1px solid var(--border);
     display: flex;
