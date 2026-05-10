@@ -302,13 +302,14 @@
     /* Sidebar com altura fixa no mobile */
     .sidebar {
       width: 100%;
-      height: 42vh;
+      height: 45vh;
       flex-shrink: 0;
       border-left: none;
       border-top: 2px solid var(--border);
     }
-    .sidebar.recolhida { height: auto; }
-    .sidebar.recolhida .sidebar-body { display: none; }
+    .sidebar.recolhida { 
+      height: calc(72px + env(safe-area-inset-bottom)); 
+    }
 
     .sidebar-drag-handle {
       display: flex;
