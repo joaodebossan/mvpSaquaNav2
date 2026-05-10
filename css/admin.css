@@ -299,11 +299,6 @@
     /* Mapa ocupa TODO o espaço restante — sidebar empurra de baixo */
     #mapa { flex: 1; min-height: 0; height: auto; }
 
-    /* Navbar empilha no mobile */
-    .navbar { flex-wrap: wrap; }
-    .logo-wrapper { flex: 1; }
-    .search-wrapper { order: 3; width: 100%; flex: none; margin-top: 6px; }
-
     /* Sidebar com altura fixa no mobile */
     .sidebar {
       width: 100%;
